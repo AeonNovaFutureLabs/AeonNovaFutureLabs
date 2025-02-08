@@ -1,229 +1,193 @@
-# ANFL ZSH Configuration System
+# ----------------------------------------------------------------------------
+# File: 250208_README_INT_v1.0_ANFL.md
+# Location: /Volumes/mattstack/VSCode/AeonNovaFutureLabs/custom_zshrc/
+#
+# Purpose: Documentation for Aeon Nova Future Labs shell framework
+# Security Level: Confidential
+# Owner: Infrastructure Team
+# Version: 1.0
+# Last Modified: 2025-02-08
+# ----------------------------------------------------------------------------
+
+# BLUF: Enterprise-grade ZSH framework with modular components, security features, and comprehensive monitoring.
 
 ## Overview
 
-The ANFL ZSH Configuration System provides a comprehensive shell environment for the Aeon Nova Future Labs framework. It follows the ANFL style guide and implements a modular, secure, and maintainable shell configuration.
+The Aeon Nova Future Labs shell framework provides a robust, secure, and maintainable environment for development and operations. It implements quantum-secure initialization, comprehensive state management, enhanced error handling, and systematic recovery mechanisms.
 
-## Components
+## Component Structure
 
 ### Core Components
+- `250208_SHELL_MAIN_INT_v1.0_ANFL.zsh`: Main shell initialization and configuration
+- `250208_ERROR_HANDLER_INT_v1.0_ANFL.zsh`: Comprehensive error handling system
+- `250208_LOGGING_INT_v1.0_ANFL.zsh`: Structured logging framework
+- `250208_CORE_ENV_INT_v1.0_ANFL.zsh`: Core environment configuration
 
-1. **Shell Main** (250208_SHELL_MAIN_INT_v1.0_ANFL.zsh)
-   - Main entry point for the ZSH configuration
-   - Coordinates component loading and initialization
-   - Manages environment setup
+### Security & Deployment
+- `250208_SECURITY_INT_v1.0_ANFL.zsh`: Security features and management
+- `250208_DEPLOY_HANDLER_INT_v1.0_ANFL.zsh`: Deployment orchestration
+- `250208_VAULT_HANDLER_INT_v1.0_ANFL.zsh`: Vault integration and secrets management
 
-2. **Error Handler** (250208_ERROR_HANDLER_INT_v1.0_ANFL.zsh)
-   - Error state management
-   - Error tracking and logging
-   - Error recovery mechanisms
+### Monitoring & Management
+- `250208_MONITOR_INT_v1.0_ANFL.zsh`: System monitoring implementation
+- `250208_VAULT_HANDLER_INT_v1.0_ANFL.zsh`: Vault management system
 
-3. **Logging System** (250208_LOGGING_INT_v1.0_ANFL.zsh)
-   - Structured logging with severity levels
-   - Log rotation and management
-   - Log file organization
+### Utilities
+- `250208_ALIASES_INT_v1.0_ANFL.zsh`: Common aliases and shortcuts
+- `250208_FUNCTIONS_INT_v1.0_ANFL.zsh`: Utility functions
 
-4. **Core Environment** (250208_CORE_ENV_INT_v1.0_ANFL.zsh)
-   - Environment variable management
-   - Directory structure validation
-   - Environment state tracking
+## Features
 
-### Security Components
+### Security
+- Quantum-secure initialization
+- Vault integration for secrets management
+- Comprehensive security validation
+- Secure state handling
 
-5. **Security Framework** (250208_SECURITY_INT_v1.0_ANFL.zsh)
-   - Security state management
-   - Permission validation
-   - Security audit logging
+### Error Handling
+- Enhanced error tracking
+- Recovery mechanisms
+- State preservation
+- Comprehensive logging
 
-6. **Vault Handler** (250208_VAULT_HANDLER_INT_v1.0_ANFL.zsh)
-   - HashiCorp Vault integration
-   - Secrets management
-   - Token and policy management
+### Environment Management
+- Modular configuration
+- Environment validation
+- Dependency management
+- Path optimization
 
-### Operational Components
+### Development Tools
+- Enhanced command completion
+- Development workflow utilities
+- Testing framework integration
+- Performance monitoring
 
-7. **Deployment Handler** (250208_DEPLOY_HANDLER_INT_v1.0_ANFL.zsh)
-   - Component deployment management
-   - Deployment verification
-   - Rollback capabilities
-
-8. **Monitoring Integration** (250208_MONITOR_INT_v1.0_ANFL.zsh)
-   - Prometheus/Grafana integration
-   - Metrics collection
-   - Health checks
-
-### Utility Components
-
-9. **Aliases** (250208_ALIASES_INT_v1.0_ANFL.zsh)
-   - Framework command shortcuts
-   - Navigation aliases
-   - Common operation aliases
-
-10. **Functions** (250208_FUNCTIONS_INT_v1.0_ANFL.zsh)
-    - Utility functions
-    - Helper operations
-    - Common tasks automation
-
-## Directory Structure
-
-```
-custom_zshrc/
-├── 250208_SHELL_MAIN_INT_v1.0_ANFL.zsh
-├── 250208_ERROR_HANDLER_INT_v1.0_ANFL.zsh
-├── 250208_LOGGING_INT_v1.0_ANFL.zsh
-├── 250208_CORE_ENV_INT_v1.0_ANFL.zsh
-├── 250208_SECURITY_INT_v1.0_ANFL.zsh
-├── 250208_VAULT_HANDLER_INT_v1.0_ANFL.zsh
-├── 250208_DEPLOY_HANDLER_INT_v1.0_ANFL.zsh
-├── 250208_MONITOR_INT_v1.0_ANFL.zsh
-├── 250208_ALIASES_INT_v1.0_ANFL.zsh
-└── 250208_FUNCTIONS_INT_v1.0_ANFL.zsh
-```
+### Monitoring
+- System health tracking
+- Performance metrics
+- Alert management
+- Resource monitoring
 
 ## Usage
 
 ### Installation
+1. Clone the repository
+2. Ensure `.zshrc` is properly configured
+3. Source the framework components
 
-1. Clone the repository:
-```bash
-git clone https://github.com/AeonNovaFutureLabs/AeonNovaFutureLabs.git
-```
+### Configuration
+```zsh
+# Core paths
+export AEON_NOVA_ROOT="/path/to/AeonNovaFutureLabs"
+export AEON_TOOLS_ROOT="/path/to/tools"
 
-2. Add to your .zshrc:
-```bash
-# ANFL Framework
-export ANFL_ROOT="/Volumes/mattstack/VSCode/AeonNovaFutureLabs"
-source "${ANFL_ROOT}/custom_zshrc/250208_SHELL_MAIN_INT_v1.0_ANFL.zsh"
+# Source components
+source "${AEON_NOVA_ROOT}/custom_zshrc/250208_SHELL_MAIN_INT_v1.0_ANFL.zsh"
+# ... additional component sourcing
 ```
 
 ### Common Commands
-
-```bash
-# Get framework status
-anfl-status
-
-# View framework help
-anfl-help
-
-# Navigate to framework directories
-anfl-root    # Go to framework root
-anfl-src     # Go to source directory
-anfl-docs    # Go to documentation
-
-# Deploy components
-anfl-deploy [component]
-
-# Monitor system
-anfl-monitor
-anfl-metrics
-
-# Security operations
-anfl-secure
-anfl-vault
-
-# View logs
-anfl-logs [error|deploy|security]
-```
-
-## Security
-
-- All configuration files follow ANFL security standards
-- Sensitive operations require appropriate permissions
-- Vault integration for secrets management
-- Comprehensive audit logging
-
-## Monitoring
-
-- Integration with Prometheus/Grafana
-- System metrics collection
-- Component health monitoring
-- Performance tracking
-
-## Maintenance
-
-### Log Management
-
-```bash
-# Clean old logs
-anfl-clean-logs [days]
-
-# View specific logs
-anfl-error-logs
-anfl-deploy-logs
-anfl-security-logs
-```
-
-### Backup Operations
-
-```bash
-# Create backup
-anfl-backup
-
-# Restore from backup
-anfl-restore [backup_file]
-```
+- `aeon_nova_help`: Display help information
+- `verify_security`: Run security checks
+- `init_environment`: Initialize environment
+- `show_status`: Display system status
 
 ## Development
 
 ### Adding New Components
+1. Follow naming convention: `YYMMDD_COMPONENT_NAME_INT_vX.Y_ANFL.zsh`
+2. Implement error handling
+3. Add logging
+4. Update documentation
+5. Test thoroughly
 
-1. Follow ANFL naming convention:
-   ```
-   [YYMMDD][TYPE][AUDIENCE]_[VERSION]_ANFL.zsh
-   ```
+### Best Practices
+- Use strict mode (`emulate -L zsh`)
+- Implement error handling
+- Add comprehensive logging
+- Follow naming conventions
+- Document all functions
+- Test thoroughly
 
-2. Include standard header:
-   ```bash
-   # ----------------------------------------------------------------------------
-   # File: [filename]
-   # Location: /Volumes/mattstack/VSCode/AeonNovaFutureLabs/custom_zshrc/
-   #
-   # Purpose: [description]
-   # Security Level: Confidential
-   # Owner: [team]
-   # Version: [version]
-   # Last Modified: [date]
-   # ----------------------------------------------------------------------------
-   ```
+## Monitoring & Maintenance
 
-3. Follow modular structure:
-   - Configuration section
-   - Core functions
-   - Helper functions
-   - Exports
+### Health Checks
+- Regular security validation
+- Environment verification
+- Performance monitoring
+- Resource tracking
 
-### Testing
+### Updates
+- Version control
+- Dependency updates
+- Security patches
+- Performance optimization
 
-```bash
-# Run framework tests
-anfl-test
+## Security Considerations
 
-# Generate test coverage
-anfl-coverage
+### Access Control
+- Least privilege principle
+- Role-based access
+- Audit logging
+- Secure initialization
 
-# Run linting
-anfl-lint
+### Secrets Management
+- Vault integration
+- Encryption
+- Key rotation
+- Access logging
+
+## Troubleshooting
+
+### Common Issues
+1. Environment errors
+   - Check path configuration
+   - Verify permissions
+   - Review logs
+
+2. Security validation failures
+   - Check Vault status
+   - Verify credentials
+   - Review security logs
+
+3. Performance issues
+   - Monitor resource usage
+   - Check system logs
+   - Review metrics
+
+### Debug Mode
+Enable debug output:
+```zsh
+export AEON_DEBUG=1
+```
+
+Enable trace mode:
+```zsh
+export AEON_TRACE=1
 ```
 
 ## References
 
-- ANFL Style Guide
-- Framework Documentation
-- Security Standards
-- Monitoring Guidelines
+### Documentation
+- Architecture Guide: `250208_ARCHITECTURE_INT_v1.0_ANFL.md`
+- Security Guide: `250208_SECURITY_GUIDE_INT_v1.0_ANFL.md`
+- Development Guide: `250208_DEV_GUIDE_INT_v1.0_ANFL.md`
+
+### Related Components
+- AI Components: `ai_components/`
+- Infrastructure: `infrastructure/`
+- Monitoring: `infrastructure/monitoring/`
 
 ## Support
 
-For issues or questions:
-1. Check framework logs
-2. Run health checks
-3. Review documentation
+For issues and support:
+1. Check documentation
+2. Review logs
+3. Use debug mode
 4. Contact infrastructure team
 
-## Version History
+## License
+Confidential and proprietary. All rights reserved.
 
-- v1.0 (2025-02-08): Initial release
-  - Core framework components
-  - Security integration
-  - Monitoring setup
-  - Utility functions
+---
+© 2025 Aeon Nova Future Labs. All rights reserved.
