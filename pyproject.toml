@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "pip>=21"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "anfl"
+version = "0.1.0"
+description = "Aeon Nova Future Labs AI components and infrastructure"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Aeon Nova Future Labs"}
+]
+dependencies = [
+    "fastapi>=0.95.2",
+    "uvicorn>=0.22.0",
+    "pydantic>=1.10.2",
+    "python-dotenv>=1.0.0",
+    "pytest>=8.3.3",
+    "pytest-cov>=6.0.0",
+    "pytest-asyncio>=0.24.0",
+    "requests>=2.31.0",
+    "loguru>=0.6.0",
+    "aiohttp>=3.8.4"
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=23.1.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+    "pre-commit>=3.0.0"
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py39"]
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 100
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q --cov=src --cov=ai_components"
+testpaths = [
+    "tests"
+]
