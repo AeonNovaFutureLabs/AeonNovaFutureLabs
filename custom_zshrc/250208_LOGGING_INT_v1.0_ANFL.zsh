@@ -213,10 +213,17 @@ get_log_level() {
 export LOG_LEVELS LOG_LEVEL LOG_COLORS MAIN_LOG
 
 # Export functions
-export -f init_logging _log
-export -f log_debug log_info log_warning log_error log_critical
-export -f rotate_logs clear_logs
-export -f set_log_level get_log_level
+functions[init_logging]=$functions[init_logging]
+functions[_log]=$functions[_log]
+functions[log_debug]=$functions[log_debug]
+functions[log_info]=$functions[log_info]
+functions[log_warning]=$functions[log_warning]
+functions[log_error]=$functions[log_error]
+functions[log_critical]=$functions[log_critical]
+functions[rotate_logs]=$functions[rotate_logs]
+functions[clear_logs]=$functions[clear_logs]
+functions[set_log_level]=$functions[set_log_level]
+functions[get_log_level]=$functions[get_log_level]
 
 # Initialize logging when sourced
 init_logging

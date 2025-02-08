@@ -15,7 +15,7 @@
 
 # BLUF: Provides robust error handling, tracking, and reporting for the ANFL framework
 
-# Enable strict mode with proper variable scoping
+# Enable strict mode
 emulate -L zsh
 setopt ERR_RETURN PIPE_FAIL LOCAL_OPTIONS LOCAL_TRAPS WARN_CREATE_GLOBAL
 
@@ -198,10 +198,15 @@ init_error_handler() {
 # Export error states and codes
 export ERROR_STATES ERROR_STATE ERROR_CODES ERROR_LOG
 
-# Export error functions
-export -f handle_error_generic handle_error track_error
-export -f check_error_state reset_error_state
-export -f print_error print_warning init_error_handler
+# Export functions
+functions[handle_error_generic]=$functions[handle_error_generic]
+functions[handle_error]=$functions[handle_error]
+functions[track_error]=$functions[track_error]
+functions[check_error_state]=$functions[check_error_state]
+functions[reset_error_state]=$functions[reset_error_state]
+functions[print_error]=$functions[print_error]
+functions[print_warning]=$functions[print_warning]
+functions[init_error_handler]=$functions[init_error_handler]
 
 # Initialize handler when sourced
 init_error_handler

@@ -53,20 +53,28 @@ MONITOR_STATES=(
 
 # Initialize monitoring
 init_monitoring() {
-    MONITOR_STATE=$MONITOR_STATES[STARTING]
+    local monitor_state
+    monitor_state=$MONITOR_STATES[STARTING]
+    MONITOR_STATE=$monitor_state
     
     # Create required directories
-    create_directory "$MONITOR_LOGS" || return 1
+    if ! create_directory "$MONITOR_LOGS"; then
+        monitor_state=$MONITOR_STATES[ERROR]
+        MONITOR_STATE=$monitor_state
+        return 1
+    fi
     
     # Verify configuration
     if [[ ! -d "$MONITOR_CONFIG" ]]; then
         log_error "Monitoring configuration not found"
-        MONITOR_STATE=$MONITOR_STATES[ERROR]
+        monitor_state=$MONITOR_STATES[ERROR]
+        MONITOR_STATE=$monitor_state
         return 1
     fi
     
     # Initialize state
-    MONITOR_STATE=$MONITOR_STATES[RUNNING]
+    monitor_state=$MONITOR_STATES[RUNNING]
+    MONITOR_STATE=$monitor_state
     log_info "Monitoring initialized"
     return 0
 }
@@ -232,8 +240,12 @@ export MONITOR_CONFIG MONITOR_LOGS
 export PROMETHEUS_PORT GRAFANA_PORT
 
 # Export functions
-export -f init_monitoring start_monitoring stop_monitoring
-export -f check_monitoring get_system_metrics
-export -f open_monitoring view_monitor_logs
+functions[init_monitoring]=$functions[init_monitoring]
+functions[start_monitoring]=$functions[start_monitoring]
+functions[stop_monitoring]=$functions[stop_monitoring]
+functions[check_monitoring]=$functions[check_monitoring]
+functions[get_system_metrics]=$functions[get_system_metrics]
+functions[open_monitoring]=$functions[open_monitoring]
+functions[view_monitor_logs]=$functions[view_monitor_logs]
 
 # ----------------------------------------------------------------------------

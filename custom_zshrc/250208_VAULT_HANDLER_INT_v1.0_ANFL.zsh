@@ -53,28 +53,35 @@ VAULT_STATES=(
 
 # Initialize Vault
 init_vault() {
+    local vault_state
+    vault_state=$VAULT_STATES[SEALED]
+    VAULT_STATE=$vault_state
+    
     # Check if vault is installed
     if ! command_exists vault; then
         log_error "Vault not installed"
         return 1
-    }
+    fi
     
     # Create required directories
-    create_directory "$VAULT_LOGS" || return 1
+    if ! create_directory "$VAULT_LOGS"; then
+        vault_state=$VAULT_STATES[ERROR]
+        VAULT_STATE=$vault_state
+        return 1
+    fi
     
     # Check Vault status
     if ! vault status >/dev/null 2>&1; then
         log_warning "Vault server not running"
-        VAULT_STATE=$VAULT_STATES[SEALED]
         return 1
-    }
+    fi
     
     # Check if unsealed
     if vault status | grep -q "Sealed.*false"; then
-        VAULT_STATE=$VAULT_STATES[UNSEALED]
+        vault_state=$VAULT_STATES[UNSEALED]
+        VAULT_STATE=$vault_state
         log_info "Vault ready"
     else
-        VAULT_STATE=$VAULT_STATES[SEALED]
         log_warning "Vault sealed"
     fi
     
@@ -88,23 +95,28 @@ unseal_vault() {
         return 0
     fi
     
-    VAULT_STATE=$VAULT_STATES[UNSEALING]
+    local vault_state
+    vault_state=$VAULT_STATES[UNSEALING]
+    VAULT_STATE=$vault_state
     
     # Check for unseal keys
     if [[ -z "$VAULT_UNSEAL_KEY" ]]; then
         log_error "VAULT_UNSEAL_KEY not set"
-        VAULT_STATE=$VAULT_STATES[ERROR]
+        vault_state=$VAULT_STATES[ERROR]
+        VAULT_STATE=$vault_state
         return 1
     fi
     
     # Unseal vault
     vault operator unseal "$VAULT_UNSEAL_KEY" || {
         log_error "Failed to unseal vault"
-        VAULT_STATE=$VAULT_STATES[ERROR]
+        vault_state=$VAULT_STATES[ERROR]
+        VAULT_STATE=$vault_state
         return 1
     }
     
-    VAULT_STATE=$VAULT_STATES[UNSEALED]
+    vault_state=$VAULT_STATES[UNSEALED]
+    VAULT_STATE=$vault_state
     log_info "Vault unsealed"
     return 0
 }
@@ -217,7 +229,8 @@ rotate_credentials() {
     fi
     
     # Generate new credential
-    local new_value=$(generate_random_string "$length")
+    local new_value
+    new_value=$(generate_random_string "$length")
     
     # Write new credential
     write_secret "$path" "value" "$new_value" || return 1
@@ -238,8 +251,13 @@ export VAULT_CONFIG VAULT_LOGS
 export VAULT_SECRET_PATH VAULT_KV_PATH
 
 # Export functions
-export -f init_vault unseal_vault
-export -f read_secret write_secret delete_secret
-export -f check_vault list_secrets rotate_credentials
+functions[init_vault]=$functions[init_vault]
+functions[unseal_vault]=$functions[unseal_vault]
+functions[read_secret]=$functions[read_secret]
+functions[write_secret]=$functions[write_secret]
+functions[delete_secret]=$functions[delete_secret]
+functions[check_vault]=$functions[check_vault]
+functions[list_secrets]=$functions[list_secrets]
+functions[rotate_credentials]=$functions[rotate_credentials]
 
 # ----------------------------------------------------------------------------

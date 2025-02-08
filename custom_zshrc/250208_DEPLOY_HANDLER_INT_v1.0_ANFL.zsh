@@ -66,18 +66,24 @@ DEPLOY_COMPONENTS=(
 
 # Initialize deployment
 init_deployment() {
+    local deploy_state
+    deploy_state=$DEPLOY_STATES[IDLE]
+    
     # Create required directories
-    create_directory "$DEPLOY_LOGS" || return 1
+    if ! create_directory "$DEPLOY_LOGS"; then
+        deploy_state=$DEPLOY_STATES[ERROR]
+        return 1
+    fi
     
     # Verify configuration
     if [[ ! -d "$DEPLOY_CONFIG" ]]; then
         log_error "Deployment configuration not found"
-        DEPLOY_STATE=$DEPLOY_STATES[ERROR]
+        deploy_state=$DEPLOY_STATES[ERROR]
         return 1
     fi
     
     # Initialize state
-    DEPLOY_STATE=$DEPLOY_STATES[IDLE]
+    DEPLOY_STATE=$deploy_state
     log_info "Deployment system initialized"
     return 0
 }
@@ -87,6 +93,7 @@ deploy_component() {
     local component="$1"
     local environment="${2:-development}"
     local force="${3:-false}"
+    local deploy_state
     
     # Validate component
     if ! array_contains "$component" "${DEPLOY_COMPONENTS[@]}"; then
@@ -98,16 +105,18 @@ deploy_component() {
     if ! array_contains "$environment" "${DEPLOY_ENVIRONMENTS[@]}"; then
         log_error "Invalid environment: $environment"
         return 1
-    }
+    fi
     
-    DEPLOY_STATE=$DEPLOY_STATES[DEPLOYING]
+    deploy_state=$DEPLOY_STATES[DEPLOYING]
+    DEPLOY_STATE=$deploy_state
     log_info "Deploying $component to $environment..."
     
     # Run pre-deployment checks
     if ! run_predeploy_checks "$component" "$environment"; then
         if [[ "$force" != "true" ]]; then
             log_error "Pre-deployment checks failed"
-            DEPLOY_STATE=$DEPLOY_STATES[ERROR]
+            deploy_state=$DEPLOY_STATES[ERROR]
+            DEPLOY_STATE=$deploy_state
             return 1
         fi
         log_warning "Forcing deployment despite failed checks"
@@ -129,13 +138,14 @@ deploy_component() {
             ;;
     esac
     
-    DEPLOY_STATE=$DEPLOY_STATES[DEPLOYED]
+    deploy_state=$DEPLOY_STATES[DEPLOYED]
+    DEPLOY_STATE=$deploy_state
     log_info "Deployment completed successfully"
     return 0
 }
 
 # -------------------------------
-# 4. Component Deployment
+# 4. Component Functions
 # -------------------------------
 
 # Deploy AI component
@@ -224,7 +234,7 @@ run_predeploy_checks() {
     if ! command_exists docker-compose; then
         log_error "Docker Compose not installed"
         return 1
-    }
+    fi
     
     # Check component configuration
     local config_file="${DEPLOY_CONFIG}/${component}/${environment}.yml"
@@ -276,9 +286,13 @@ export DEPLOY_CONFIG DEPLOY_LOGS
 export DEPLOY_ENVIRONMENTS DEPLOY_COMPONENTS
 
 # Export functions
-export -f init_deployment deploy_component
-export -f deploy_ai_component deploy_monitoring_component
-export -f deploy_vector_store_component deploy_all_components
-export -f run_predeploy_checks check_deployment
+functions[init_deployment]=$functions[init_deployment]
+functions[deploy_component]=$functions[deploy_component]
+functions[deploy_ai_component]=$functions[deploy_ai_component]
+functions[deploy_monitoring_component]=$functions[deploy_monitoring_component]
+functions[deploy_vector_store_component]=$functions[deploy_vector_store_component]
+functions[deploy_all_components]=$functions[deploy_all_components]
+functions[run_predeploy_checks]=$functions[run_predeploy_checks]
+functions[check_deployment]=$functions[check_deployment]
 
 # ----------------------------------------------------------------------------

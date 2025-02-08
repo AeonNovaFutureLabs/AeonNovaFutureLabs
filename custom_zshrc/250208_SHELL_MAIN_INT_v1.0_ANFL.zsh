@@ -114,19 +114,17 @@ alias anfl-logs="view_logs"
 alias anfl-monitor="open_monitoring"
 
 # -------------------------------
-# 4. Exports
-# -------------------------------
-
-# Export functions
-export -f init_anfl_framework anfl_status anfl_help
-
-# -------------------------------
-# 5. Initialization
+# 4. Initialization
 # -------------------------------
 
 # Only run in interactive shells
 if [[ -o interactive ]]; then
     init_anfl_framework
 fi
+
+# Export functions
+functions[init_anfl_framework]=$functions[init_anfl_framework]
+functions[anfl_status]=$functions[anfl_status]
+functions[anfl_help]=$functions[anfl_help]
 
 # ----------------------------------------------------------------------------

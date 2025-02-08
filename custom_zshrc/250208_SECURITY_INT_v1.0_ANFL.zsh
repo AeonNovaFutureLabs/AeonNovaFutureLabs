@@ -67,18 +67,19 @@ init_security() {
 verify_permissions() {
     local file=$1
     local expected_perms=$2
-    local current_perms
     
     if [[ ! -e "$file" ]]; then
         log_error "File not found: $file"
         return 1
-    }
+    fi
     
-    current_perms=$(stat -f%Lp "$file")
-    if [[ "$current_perms" != "$expected_perms" ]]; then
-        log_error "Invalid permissions on $file: $current_perms (expected $expected_perms)"
+    local perms
+    perms=$(stat -f%Lp "$file")
+    
+    if [[ "$perms" != "$expected_perms" ]]; then
+        log_error "Invalid permissions on $file: $perms (expected $expected_perms)"
         return 1
-    }
+    fi
     
     return 0
 }
@@ -149,7 +150,10 @@ cleanup_temp_files() {
 export SECURITY_STATES SECURITY_STATE
 
 # Export functions
-export -f init_security verify_permissions check_security
-export -f generate_temp_file cleanup_temp_files
+functions[init_security]=$functions[init_security]
+functions[verify_permissions]=$functions[verify_permissions]
+functions[check_security]=$functions[check_security]
+functions[generate_temp_file]=$functions[generate_temp_file]
+functions[cleanup_temp_files]=$functions[cleanup_temp_files]
 
 # ----------------------------------------------------------------------------

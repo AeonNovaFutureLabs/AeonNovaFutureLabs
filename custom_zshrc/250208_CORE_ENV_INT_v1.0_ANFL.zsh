@@ -222,9 +222,13 @@ validate_environment() {
 export ENV_STATES ENV_STATE
 
 # Export core functions
-export -f init_env validate_environment
-export -f validate_env_vars validate_directories validate_permissions
-export -f create_directories set_env_defaults
+functions[init_env]=$functions[init_env]
+functions[validate_environment]=$functions[validate_environment]
+functions[validate_env_vars]=$functions[validate_env_vars]
+functions[validate_directories]=$functions[validate_directories]
+functions[validate_permissions]=$functions[validate_permissions]
+functions[create_directories]=$functions[create_directories]
+functions[set_env_defaults]=$functions[set_env_defaults]
 
 # Initialize environment when sourced
 init_env
