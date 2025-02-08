@@ -2,7 +2,7 @@
 # File: 250208_VAULT_HANDLER_INT_v1.0_ANFL.zsh
 # Location: /Volumes/mattstack/VSCode/AeonNovaFutureLabs/custom_zshrc/
 #
-# Purpose: Secure secrets management using HashiCorp Vault for ANFL framework
+# Purpose: Vault integration and secrets management for ANFL framework
 # Security Level: Confidential
 # Owner: Infrastructure Team
 # Version: 1.0
@@ -10,21 +10,21 @@
 #
 # References:
 # - 250208_SHELL_MAIN_INT_v1.0_ANFL.zsh
-# - 250208_SECURITY_INT_v1.0_ANFL.zsh
+# - 250208_ERROR_HANDLER_INT_v1.0_ANFL.zsh
 # ----------------------------------------------------------------------------
 
-# BLUF: Provides secure secrets management and access control using HashiCorp Vault
+# BLUF: Provides Vault integration and secrets management for the ANFL framework
 
 # Enable strict mode
 emulate -L zsh
 setopt ERR_RETURN PIPE_FAIL LOCAL_OPTIONS LOCAL_TRAPS WARN_CREATE_GLOBAL
 
 # -------------------------------
-# 1. Vault Configuration
+# 1. Vault States
 # -------------------------------
 
 # Define vault states
-typeset -gA VAULT_STATES
+declare -gA VAULT_STATES
 VAULT_STATES=(
     [SEALED]=0
     [UNSEALING]=1
@@ -35,240 +35,211 @@ VAULT_STATES=(
 # Current vault state
 : ${VAULT_STATE:=$VAULT_STATES[SEALED]}
 
-# Vault configuration
-: ${VAULT_ADDR:="http://127.0.0.1:8200"}
-: ${VAULT_CONFIG_DIR:="${ANFL_ROOT}/infrastructure/vault"}
-: ${VAULT_DATA_DIR:="${ANFL_LOGS}/vault"}
+# -------------------------------
+# 2. Vault Configuration
+# -------------------------------
 
-# Export Vault address
-export VAULT_ADDR
+# Define paths
+: ${VAULT_CONFIG:="${ANFL_ROOT}/infrastructure/vault"}
+: ${VAULT_LOGS:="${ANFL_LOGS}/vault"}
+
+# Define default mount points
+: ${VAULT_SECRET_PATH:="secret"}
+: ${VAULT_KV_PATH:="kv"}
 
 # -------------------------------
-# 2. Vault Operations
+# 3. Core Functions
 # -------------------------------
 
 # Initialize Vault
-function init_vault() {
-    log_info "Initializing Vault..."
-    
-    # Create Vault directories
-    mkdir -p "${VAULT_CONFIG_DIR}" "${VAULT_DATA_DIR}"
-    chmod 750 "${VAULT_CONFIG_DIR}" "${VAULT_DATA_DIR}"
-    
-    # Check if Vault is already initialized
-    if vault status >/dev/null 2>&1; then
-        log_info "Vault is already initialized"
-        return "${ERROR_CODES[SUCCESS]}"
-    fi
-    
-    # Initialize Vault
-    local init_output=$(vault operator init -key-shares=5 -key-threshold=3)
-    if [[ $? -ne 0 ]]; then
-        log_error "Failed to initialize Vault"
-        return "${ERROR_CODES[VAULT_ERROR]}"
+init_vault() {
+    # Check if vault is installed
+    if ! command_exists vault; then
+        log_error "Vault not installed"
+        return 1
     }
     
-    # Store initialization output securely
-    echo "$init_output" > "${VAULT_DATA_DIR}/init.txt"
-    chmod 600 "${VAULT_DATA_DIR}/init.txt"
+    # Create required directories
+    create_directory "$VAULT_LOGS" || return 1
     
-    log_info "Vault initialized successfully"
-    return "${ERROR_CODES[SUCCESS]}"
+    # Check Vault status
+    if ! vault status >/dev/null 2>&1; then
+        log_warning "Vault server not running"
+        VAULT_STATE=$VAULT_STATES[SEALED]
+        return 1
+    }
+    
+    # Check if unsealed
+    if vault status | grep -q "Sealed.*false"; then
+        VAULT_STATE=$VAULT_STATES[UNSEALED]
+        log_info "Vault ready"
+    else
+        VAULT_STATE=$VAULT_STATES[SEALED]
+        log_warning "Vault sealed"
+    fi
+    
+    return 0
 }
 
 # Unseal Vault
-function unseal_vault() {
-    VAULT_STATE=$VAULT_STATES[UNSEALING]
-    log_info "Unsealing Vault..."
-    
-    # Check if already unsealed
-    if vault status 2>/dev/null | grep -q "Sealed.*false"; then
-        VAULT_STATE=$VAULT_STATES[UNSEALED]
-        log_info "Vault is already unsealed"
-        return "${ERROR_CODES[SUCCESS]}"
+unseal_vault() {
+    if [[ $VAULT_STATE == $VAULT_STATES[UNSEALED] ]]; then
+        log_warning "Vault already unsealed"
+        return 0
     fi
     
-    # Read unseal keys
-    if [[ ! -f "${VAULT_DATA_DIR}/init.txt" ]]; then
-        log_error "Vault initialization file not found"
-        return "${ERROR_CODES[VAULT_ERROR]}"
+    VAULT_STATE=$VAULT_STATES[UNSEALING]
+    
+    # Check for unseal keys
+    if [[ -z "$VAULT_UNSEAL_KEY" ]]; then
+        log_error "VAULT_UNSEAL_KEY not set"
+        VAULT_STATE=$VAULT_STATES[ERROR]
+        return 1
+    fi
+    
+    # Unseal vault
+    vault operator unseal "$VAULT_UNSEAL_KEY" || {
+        log_error "Failed to unseal vault"
+        VAULT_STATE=$VAULT_STATES[ERROR]
+        return 1
     }
-    
-    # Extract unseal keys (first three)
-    local keys=($(grep "Unseal Key" "${VAULT_DATA_DIR}/init.txt" | head -3 | awk '{print $4}'))
-    
-    # Unseal with each key
-    for key in "${keys[@]}"; do
-        vault operator unseal "$key" || {
-            log_error "Failed to unseal Vault with key"
-            return "${ERROR_CODES[VAULT_ERROR]}"
-        }
-    done
     
     VAULT_STATE=$VAULT_STATES[UNSEALED]
-    log_info "Vault unsealed successfully"
-    return "${ERROR_CODES[SUCCESS]}"
+    log_info "Vault unsealed"
+    return 0
 }
 
 # -------------------------------
-# 3. Secret Management
+# 4. Secret Management
 # -------------------------------
 
-# Store secret
-function store_secret() {
-    local path=$1
-    local key=$2
-    local value=$3
+# Read secret
+read_secret() {
+    local path="$1"
+    local key="${2:-value}"
     
-    # Validate input
-    if [[ -z "$path" || -z "$key" || -z "$value" ]]; then
-        log_error "Missing required parameters for store_secret"
-        return "${ERROR_CODES[VAULT_ERROR]}"
+    if [[ $VAULT_STATE != $VAULT_STATES[UNSEALED] ]]; then
+        log_error "Vault not unsealed"
+        return 1
+    fi
+    
+    vault kv get -field="$key" "${VAULT_SECRET_PATH}/${path}" || {
+        log_error "Failed to read secret: $path"
+        return 1
     }
     
-    # Store secret
-    if ! vault kv put "secret/$path" "$key=$value"; then
-        log_error "Failed to store secret at path: $path"
-        return "${ERROR_CODES[VAULT_ERROR]}"
-    }
-    
-    log_info "Secret stored successfully at: $path"
-    return "${ERROR_CODES[SUCCESS]}"
+    return 0
 }
 
-# Retrieve secret
-function get_secret() {
-    local path=$1
-    local key=$2
+# Write secret
+write_secret() {
+    local path="$1"
+    local key="$2"
+    local value="$3"
     
-    # Validate input
-    if [[ -z "$path" || -z "$key" ]]; then
-        log_error "Missing required parameters for get_secret"
-        return "${ERROR_CODES[VAULT_ERROR]}"
+    if [[ $VAULT_STATE != $VAULT_STATES[UNSEALED] ]]; then
+        log_error "Vault not unsealed"
+        return 1
+    fi
+    
+    vault kv put "${VAULT_SECRET_PATH}/${path}" "${key}=${value}" || {
+        log_error "Failed to write secret: $path"
+        return 1
     }
     
-    # Retrieve secret
-    local value=$(vault kv get -field="$key" "secret/$path" 2>/dev/null)
-    if [[ $? -ne 0 ]]; then
-        log_error "Failed to retrieve secret from path: $path"
-        return "${ERROR_CODES[VAULT_ERROR]}"
-    }
-    
-    echo "$value"
-    return "${ERROR_CODES[SUCCESS]}"
+    log_info "Secret written: $path"
+    return 0
 }
 
 # Delete secret
-function delete_secret() {
-    local path=$1
+delete_secret() {
+    local path="$1"
     
-    # Validate input
-    if [[ -z "$path" ]]; then
-        log_error "Missing path parameter for delete_secret"
-        return "${ERROR_CODES[VAULT_ERROR]}"
+    if [[ $VAULT_STATE != $VAULT_STATES[UNSEALED] ]]; then
+        log_error "Vault not unsealed"
+        return 1
+    fi
+    
+    vault kv delete "${VAULT_SECRET_PATH}/${path}" || {
+        log_error "Failed to delete secret: $path"
+        return 1
     }
     
-    # Delete secret
-    if ! vault kv delete "secret/$path"; then
-        log_error "Failed to delete secret at path: $path"
-        return "${ERROR_CODES[VAULT_ERROR]}"
-    }
-    
-    log_info "Secret deleted successfully from: $path"
-    return "${ERROR_CODES[SUCCESS]}"
+    log_info "Secret deleted: $path"
+    return 0
 }
 
 # -------------------------------
-# 4. Policy Management
+# 5. Utility Functions
 # -------------------------------
 
-# Create policy
-function create_policy() {
-    local name=$1
-    local policy_file=$2
+# Check Vault status
+check_vault() {
+    if ! command_exists vault; then
+        print -P "%F{red}Vault not installed%f"
+        return 1
+    fi
     
-    # Validate input
-    if [[ ! -f "$policy_file" ]]; then
-        log_error "Policy file not found: $policy_file"
-        return "${ERROR_CODES[VAULT_ERROR]}"
+    print -P "%F{cyan}Vault Status:%f"
+    vault status 2>/dev/null || {
+        print -P "%F{red}Vault server not running%f"
+        return 1
     }
     
-    # Create policy
-    if ! vault policy write "$name" "$policy_file"; then
-        log_error "Failed to create policy: $name"
-        return "${ERROR_CODES[VAULT_ERROR]}"
+    return 0
+}
+
+# List secrets
+list_secrets() {
+    local path="${1:-/}"
+    
+    if [[ $VAULT_STATE != $VAULT_STATES[UNSEALED] ]]; then
+        log_error "Vault not unsealed"
+        return 1
+    fi
+    
+    vault kv list "${VAULT_SECRET_PATH}${path}" || {
+        log_error "Failed to list secrets"
+        return 1
     }
     
-    log_info "Policy created successfully: $name"
-    return "${ERROR_CODES[SUCCESS]}"
+    return 0
+}
+
+# Rotate credentials
+rotate_credentials() {
+    local path="$1"
+    local length="${2:-32}"
+    
+    if [[ $VAULT_STATE != $VAULT_STATES[UNSEALED] ]]; then
+        log_error "Vault not unsealed"
+        return 1
+    fi
+    
+    # Generate new credential
+    local new_value=$(generate_random_string "$length")
+    
+    # Write new credential
+    write_secret "$path" "value" "$new_value" || return 1
+    
+    log_info "Credentials rotated: $path"
+    return 0
 }
 
 # -------------------------------
-# 5. Token Management
-# -------------------------------
-
-# Create token
-function create_token() {
-    local policy=$1
-    local ttl=${2:-"24h"}
-    
-    # Create token
-    local token_info=$(vault token create -policy="$policy" -ttl="$ttl" -format=json)
-    if [[ $? -ne 0 ]]; then
-        log_error "Failed to create token with policy: $policy"
-        return "${ERROR_CODES[VAULT_ERROR]}"
-    }
-    
-    echo "$token_info" | jq -r '.auth.client_token'
-    return "${ERROR_CODES[SUCCESS]}"
-}
-
-# Revoke token
-function revoke_token() {
-    local token=$1
-    
-    # Revoke token
-    if ! vault token revoke "$token"; then
-        log_error "Failed to revoke token"
-        return "${ERROR_CODES[VAULT_ERROR]}"
-    }
-    
-    log_info "Token revoked successfully"
-    return "${ERROR_CODES[SUCCESS]}"
-}
-
-# -------------------------------
-# 6. Initialization
-# -------------------------------
-
-# Initialize Vault environment
-function init_vault_env() {
-    log_info "Initializing Vault environment..."
-    
-    # Check Vault installation
-    if ! command -v vault >/dev/null; then
-        log_error "Vault not installed"
-        return "${ERROR_CODES[VAULT_ERROR]}"
-    }
-    
-    # Initialize and unseal
-    init_vault || return $?
-    unseal_vault || return $?
-    
-    log_info "Vault environment initialized successfully"
-    return "${ERROR_CODES[SUCCESS]}"
-}
-
-# -------------------------------
-# 7. Exports
+# 6. Exports
 # -------------------------------
 
 # Export vault states
-typeset -gx VAULT_STATES VAULT_STATE
+export VAULT_STATES VAULT_STATE
+
+# Export vault configuration
+export VAULT_CONFIG VAULT_LOGS
+export VAULT_SECRET_PATH VAULT_KV_PATH
 
 # Export functions
-typeset -fx init_vault_env init_vault unseal_vault
-typeset -fx store_secret get_secret delete_secret
-typeset -fx create_policy create_token revoke_token
+export -f init_vault unseal_vault
+export -f read_secret write_secret delete_secret
+export -f check_vault list_secrets rotate_credentials
 
 # ----------------------------------------------------------------------------

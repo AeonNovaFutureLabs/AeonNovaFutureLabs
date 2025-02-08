@@ -2,7 +2,7 @@
 # File: 250208_MONITOR_INT_v1.0_ANFL.zsh
 # Location: /Volumes/mattstack/VSCode/AeonNovaFutureLabs/custom_zshrc/
 #
-# Purpose: Monitoring system integration and metrics collection for ANFL framework
+# Purpose: Monitoring and metrics functions for ANFL framework
 # Security Level: Confidential
 # Owner: Infrastructure Team
 # Version: 1.0
@@ -11,226 +11,229 @@
 # References:
 # - 250208_SHELL_MAIN_INT_v1.0_ANFL.zsh
 # - 250208_ERROR_HANDLER_INT_v1.0_ANFL.zsh
-# - 250208_LOGGING_INT_v1.0_ANFL.zsh
 # ----------------------------------------------------------------------------
 
-# BLUF: Provides monitoring integration, metrics collection, and health checks for ANFL framework
+# BLUF: Provides monitoring and metrics functionality for the ANFL framework
 
 # Enable strict mode
 emulate -L zsh
 setopt ERR_RETURN PIPE_FAIL LOCAL_OPTIONS LOCAL_TRAPS WARN_CREATE_GLOBAL
 
 # -------------------------------
-# 1. Monitoring Configuration
+# 1. Monitor States
 # -------------------------------
 
-# Define monitoring states
-typeset -gA MONITOR_STATES
+# Define monitor states
+declare -gA MONITOR_STATES
 MONITOR_STATES=(
     [STOPPED]=0
     [STARTING]=1
     [RUNNING]=2
     [ERROR]=3
-    [DEGRADED]=4
 )
 
-# Current monitoring state
+# Current monitor state
 : ${MONITOR_STATE:=$MONITOR_STATES[STOPPED]}
 
-# Monitoring configuration
+# -------------------------------
+# 2. Monitor Configuration
+# -------------------------------
+
+# Define paths
+: ${MONITOR_CONFIG:="${ANFL_ROOT}/infrastructure/monitoring"}
+: ${MONITOR_LOGS:="${ANFL_LOGS}/monitoring"}
+
+# Define ports
 : ${PROMETHEUS_PORT:=9090}
 : ${GRAFANA_PORT:=3000}
-: ${NODE_EXPORTER_PORT:=9100}
 
 # -------------------------------
-# 2. Health Checks
+# 3. Core Functions
 # -------------------------------
 
-# Check Prometheus health
-function check_prometheus() {
-    if curl -s "http://localhost:${PROMETHEUS_PORT}/-/healthy" > /dev/null; then
-        return "${ERROR_CODES[SUCCESS]}"
-    else
-        log_error "Prometheus health check failed"
-        return "${ERROR_CODES[MONITORING_ERROR]}"
-    fi
-}
-
-# Check Grafana health
-function check_grafana() {
-    if curl -s "http://localhost:${GRAFANA_PORT}/api/health" > /dev/null; then
-        return "${ERROR_CODES[SUCCESS]}"
-    else
-        log_error "Grafana health check failed"
-        return "${ERROR_CODES[MONITORING_ERROR]}"
-    fi
-}
-
-# Check Node Exporter health
-function check_node_exporter() {
-    if curl -s "http://localhost:${NODE_EXPORTER_PORT}/metrics" > /dev/null; then
-        return "${ERROR_CODES[SUCCESS]}"
-    else
-        log_error "Node Exporter health check failed"
-        return "${ERROR_CODES[MONITORING_ERROR]}"
-    fi
-}
-
-# -------------------------------
-# 3. Metrics Collection
-# -------------------------------
-
-# Collect system metrics
-function collect_system_metrics() {
-    local output_file="${ANFL_LOGS}/monitoring/system_metrics.json"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    
-    # Collect CPU metrics
-    local cpu_usage=$(top -l 1 | grep "CPU usage" | awk '{print $3}' | cut -d% -f1)
-    
-    # Collect memory metrics
-    local memory_usage=$(vm_stat | awk '/free/ {free=$3} /active/ {active=$3} /inactive/ {inactive=$3} /speculative/ {speculative=$3} /wired/ {wired=$4} END {total=(free+active+inactive+speculative+wired)*4096/1024/1024; print total}')
-    
-    # Collect disk metrics
-    local disk_usage=$(df -h / | awk 'NR==2 {print $5}' | cut -d% -f1)
-    
-    # Create metrics JSON
-    cat > "$output_file" << EOF
-{
-    "timestamp": "${timestamp}",
-    "metrics": {
-        "cpu_usage": ${cpu_usage},
-        "memory_usage_mb": ${memory_usage},
-        "disk_usage_percent": ${disk_usage}
-    }
-}
-EOF
-}
-
-# Collect framework metrics
-function collect_framework_metrics() {
-    local output_file="${ANFL_LOGS}/monitoring/framework_metrics.json"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    
-    # Count active processes
-    local process_count=$(ps aux | grep -i "anfl" | grep -v grep | wc -l)
-    
-    # Count open file descriptors
-    local fd_count=$(lsof -u $USER | grep -i "anfl" | wc -l)
-    
-    # Create metrics JSON
-    cat > "$output_file" << EOF
-{
-    "timestamp": "${timestamp}",
-    "metrics": {
-        "process_count": ${process_count},
-        "file_descriptor_count": ${fd_count},
-        "security_state": "${(k)SECURITY_STATES[(r)$SECURITY_STATE]}",
-        "deploy_state": "${(k)DEPLOY_STATES[(r)$DEPLOY_STATE]}"
-    }
-}
-EOF
-}
-
-# -------------------------------
-# 4. Monitoring Operations
-# -------------------------------
-
-# Start monitoring services
-function start_monitoring() {
+# Initialize monitoring
+init_monitoring() {
     MONITOR_STATE=$MONITOR_STATES[STARTING]
-    log_info "Starting monitoring services..."
+    
+    # Create required directories
+    create_directory "$MONITOR_LOGS" || return 1
+    
+    # Verify configuration
+    if [[ ! -d "$MONITOR_CONFIG" ]]; then
+        log_error "Monitoring configuration not found"
+        MONITOR_STATE=$MONITOR_STATES[ERROR]
+        return 1
+    fi
+    
+    # Initialize state
+    MONITOR_STATE=$MONITOR_STATES[RUNNING]
+    log_info "Monitoring initialized"
+    return 0
+}
+
+# Start monitoring stack
+start_monitoring() {
+    if [[ $MONITOR_STATE == $MONITOR_STATES[RUNNING] ]]; then
+        log_warning "Monitoring already running"
+        return 0
+    fi
+    
+    log_info "Starting monitoring stack..."
     
     # Start Prometheus
-    if ! pgrep prometheus > /dev/null; then
-        prometheus \
-            --config.file="${ANFL_ROOT}/infrastructure/monitoring/prometheus/prometheus-config.yaml" \
-            --storage.tsdb.path="${ANFL_LOGS}/monitoring/prometheus" \
-            --web.listen-address=":${PROMETHEUS_PORT}" \
-            > "${ANFL_LOGS}/monitoring/prometheus.log" 2>&1 &
+    if ! pgrep prometheus >/dev/null; then
+        cd "$MONITOR_CONFIG/prometheus" && {
+            docker-compose up -d || {
+                log_error "Failed to start Prometheus"
+                return 1
+            }
+        }
     fi
     
     # Start Grafana
-    if ! pgrep grafana-server > /dev/null; then
-        grafana-server \
-            --config="${ANFL_ROOT}/infrastructure/monitoring/grafana/grafana-config.yaml" \
-            --homepath="/usr/share/grafana" \
-            > "${ANFL_LOGS}/monitoring/grafana.log" 2>&1 &
+    if ! pgrep grafana-server >/dev/null; then
+        cd "$MONITOR_CONFIG/grafana" && {
+            docker-compose up -d || {
+                log_error "Failed to start Grafana"
+                return 1
+            }
+        }
     fi
     
-    # Start Node Exporter
-    if ! pgrep node_exporter > /dev/null; then
-        node_exporter \
-            --web.listen-address=":${NODE_EXPORTER_PORT}" \
-            > "${ANFL_LOGS}/monitoring/node_exporter.log" 2>&1 &
-    fi
-    
-    # Wait for services to start
-    sleep 5
-    
-    # Check health
-    if check_prometheus && check_grafana && check_node_exporter; then
-        MONITOR_STATE=$MONITOR_STATES[RUNNING]
-        log_info "Monitoring services started successfully"
-        return "${ERROR_CODES[SUCCESS]}"
-    else
-        MONITOR_STATE=$MONITOR_STATES[ERROR]
-        log_error "Failed to start monitoring services"
-        return "${ERROR_CODES[MONITORING_ERROR]}"
-    fi
+    MONITOR_STATE=$MONITOR_STATES[RUNNING]
+    log_info "Monitoring stack started"
+    return 0
 }
 
-# Stop monitoring services
-function stop_monitoring() {
-    log_info "Stopping monitoring services..."
+# Stop monitoring stack
+stop_monitoring() {
+    if [[ $MONITOR_STATE == $MONITOR_STATES[STOPPED] ]]; then
+        log_warning "Monitoring already stopped"
+        return 0
+    fi
     
-    pkill prometheus
-    pkill grafana-server
-    pkill node_exporter
+    log_info "Stopping monitoring stack..."
+    
+    # Stop Prometheus
+    cd "$MONITOR_CONFIG/prometheus" && {
+        docker-compose down || log_warning "Failed to stop Prometheus"
+    }
+    
+    # Stop Grafana
+    cd "$MONITOR_CONFIG/grafana" && {
+        docker-compose down || log_warning "Failed to stop Grafana"
+    }
     
     MONITOR_STATE=$MONITOR_STATES[STOPPED]
-    log_info "Monitoring services stopped"
+    log_info "Monitoring stack stopped"
+    return 0
 }
 
-# Initialize monitoring
-function init_monitoring() {
-    log_info "Initializing monitoring system..."
-    
-    # Create monitoring directories
-    mkdir -p "${ANFL_LOGS}/monitoring/prometheus"
-    mkdir -p "${ANFL_LOGS}/monitoring/grafana"
-    
-    # Start monitoring services
-    start_monitoring || return $?
-    
-    # Set up metric collection
-    collect_system_metrics
-    collect_framework_metrics
-    
-    log_info "Monitoring system initialized successfully"
-    return "${ERROR_CODES[SUCCESS]}"
-}
+# -------------------------------
+# 4. Metric Functions
+# -------------------------------
 
-# Get monitoring status
-function get_monitoring_status() {
+# Check monitoring status
+check_monitoring() {
+    local prometheus_status="Stopped"
+    local grafana_status="Stopped"
+    
+    # Check Prometheus
+    if pgrep prometheus >/dev/null; then
+        prometheus_status="Running"
+    fi
+    
+    # Check Grafana
+    if pgrep grafana-server >/dev/null; then
+        grafana_status="Running"
+    fi
+    
     print -P "%F{cyan}Monitoring Status:%f"
-    print -P "State: %F{green}${(k)MONITOR_STATES[(r)$MONITOR_STATE]}%f"
-    print -P "Prometheus: %F{green}$(pgrep prometheus >/dev/null && echo "Running" || echo "Stopped")%f"
-    print -P "Grafana: %F{green}$(pgrep grafana-server >/dev/null && echo "Running" || echo "Stopped")%f"
-    print -P "Node Exporter: %F{green}$(pgrep node_exporter >/dev/null && echo "Running" || echo "Stopped")%f"
+    print -P "  Prometheus: %F{yellow}${prometheus_status}%f"
+    print -P "  Grafana: %F{yellow}${grafana_status}%f"
+    
+    return 0
+}
+
+# Get system metrics
+get_system_metrics() {
+    print -P "%F{cyan}System Metrics:%f"
+    
+    # CPU Load
+    print -P "  CPU Load: %F{yellow}$(get_load_avg)%f"
+    
+    # Memory Usage
+    print -P "  Memory Usage:"
+    get_memory_info | while read -r line; do
+        print -P "    %F{yellow}${line}%f"
+    done
+    
+    # Disk Usage
+    print -P "  Disk Usage:"
+    df -h | grep -v "^Filesystem" | while read -r line; do
+        print -P "    %F{yellow}${line}%f"
+    done
+    
+    return 0
 }
 
 # -------------------------------
-# 5. Exports
+# 5. Utility Functions
 # -------------------------------
 
-# Export monitoring states
-typeset -gx MONITOR_STATES MONITOR_STATE
+# Open monitoring dashboard
+open_monitoring() {
+    if [[ $MONITOR_STATE != $MONITOR_STATES[RUNNING] ]]; then
+        log_error "Monitoring not running"
+        return 1
+    fi
+    
+    # Open Grafana
+    open "http://localhost:${GRAFANA_PORT}" || {
+        log_error "Failed to open Grafana dashboard"
+        return 1
+    }
+    
+    return 0
+}
+
+# View monitoring logs
+view_monitor_logs() {
+    local component="${1:-all}"
+    
+    case "$component" in
+        prometheus)
+            docker logs -f prometheus
+            ;;
+        grafana)
+            docker logs -f grafana
+            ;;
+        all)
+            docker logs -f prometheus & docker logs -f grafana
+            ;;
+        *)
+            log_error "Invalid component: $component"
+            return 1
+            ;;
+    esac
+    
+    return 0
+}
+
+# -------------------------------
+# 6. Exports
+# -------------------------------
+
+# Export monitor states
+export MONITOR_STATES MONITOR_STATE
+
+# Export monitor configuration
+export MONITOR_CONFIG MONITOR_LOGS
+export PROMETHEUS_PORT GRAFANA_PORT
 
 # Export functions
-typeset -fx init_monitoring start_monitoring stop_monitoring
-typeset -fx check_prometheus check_grafana check_node_exporter
-typeset -fx collect_system_metrics collect_framework_metrics
-typeset -fx get_monitoring_status
+export -f init_monitoring start_monitoring stop_monitoring
+export -f check_monitoring get_system_metrics
+export -f open_monitoring view_monitor_logs
 
 # ----------------------------------------------------------------------------
