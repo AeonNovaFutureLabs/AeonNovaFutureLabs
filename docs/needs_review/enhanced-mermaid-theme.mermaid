@@ -1,0 +1,61 @@
+%%{
+  init: {
+    'theme': 'base',
+    'themeVariables': {
+      'primaryColor': '#1A1A2E',
+      'primaryTextColor': '#FFFFFF',
+      'primaryBorderColor': '#33334C',
+      'lineColor': 'linear-gradient(45deg, #CD7F32, #DBA867)',
+      'secondaryColor': '#E6E6E6',
+      'tertiaryColor': '#CD7F32',
+      'mainBkg': '#1A1A2E',
+      'nodeBorder': '#CD7F32',
+      'clusterBkg': 'linear-gradient(180deg, #1A1A2E 0%, #33334C 100%)',
+      'titleColor': '#FFFFFF',
+      'edgeLabelBackground': '#33334C',
+      'clusterBorder': '#CD7F32'
+    },
+    'themeCSS': `
+      .node rect {
+        fill: linear-gradient(135deg, #1A1A2E 0%, #33334C 100%);
+        stroke-width: 2px;
+      }
+      .cluster rect {
+        fill: linear-gradient(180deg, #1A1A2E 0%, #33334C 100%);
+        stroke-width: 2px;
+      }
+      .edgeLabel {
+        background: linear-gradient(45deg, #33334C, #1A1A2E);
+        color: #FFFFFF;
+      }
+    `
+  }
+}%%
+
+graph TB
+    subgraph Cloud["🌐 Cloud Services"]
+        K8s[("Kubernetes")]
+        ADB[("AstraDB")]
+        Vector[("Vector Store")]
+    end
+
+    subgraph Core["⚙️ Core Systems"]
+        API["API Gateway"]
+        Auth["Auth Service"]
+        Cache["Cache Layer"]
+    end
+
+    subgraph Data["📊 Data Flow"]
+        Process["Processor"]
+        Store["Storage"]
+        Analytics["Analytics"]
+    end
+
+    Cloud --> Core
+    Core --> Data
+
+style Cloud fill:url(#gradient-cloud),#1A1A2E
+style Core fill:url(#gradient-core),#33334C
+style Data fill:url(#gradient-data),#1A1A2E
+classDef default stroke:#CD7F32,stroke-width:2px,color:#FFFFFF
+classDef endpoint fill:#CD7F32,stroke:#1A1A2E,color:#FFFFFF

@@ -1,0 +1,45 @@
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#1A1A2E',
+    'primaryTextColor': '#FFFFFF',
+    'primaryBorderColor': '#33334C',
+    'lineColor': '#CD7F32',
+    'secondaryColor': '#E6E6E6',
+    'tertiaryColor': '#CD7F32'
+  }
+}}%%
+
+graph TB
+    subgraph Local["Local Development"]
+        VSCode[VSCode Workspace]
+        Docker[Docker Desktop]
+        K8s[Local K8s]
+    end
+
+    subgraph ML["ML Development"]
+        Train[Training Scripts]
+        Data[Data Processing]
+        Models[Model Registry]
+    end
+
+    subgraph Storage["Local Storage"]
+        Volume[External Volume]
+        Cache[Local Cache]
+        Config[Configurations]
+    end
+
+    subgraph Tools["Development Tools"]
+        Lint[Linters]
+        Test[Test Runners]
+        Debug[Debuggers]
+    end
+
+    Local --> ML
+    ML --> Storage
+    Tools --> Local
+
+    style Local fill:#1A1A2E,stroke:#CD7F32,color:#FFFFFF
+    style ML fill:#33334C,stroke:#CD7F32,color:#FFFFFF
+    style Storage fill:#1A1A2E,stroke:#CD7F32,color:#FFFFFF
+    style Tools fill:#E6E6E6,stroke:#1A1A2E,color:#1A1A2E

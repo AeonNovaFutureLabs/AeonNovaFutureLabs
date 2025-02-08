@@ -1,0 +1,53 @@
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#1A1A2E',
+    'primaryTextColor': '#FFFFFF',
+    'primaryBorderColor': '#33334C',
+    'lineColor': '#CD7F32',
+    'secondaryColor': '#E6E6E6',
+    'tertiaryColor': '#CD7F32'
+  }
+}}%%
+
+graph TB
+    subgraph Design["Design System"]
+        Figma[Figma]
+        DS[Design System Tokens]
+        Components[Component Library]
+    end
+
+    subgraph PM["Project Management"]
+        Linear[Linear]
+        Tasks[Task Tracking]
+        Sprints[Sprint Planning]
+    end
+
+    subgraph Doc["Documentation"]
+        Notion[Notion]
+        Wiki[Knowledge Base]
+        Specs[Technical Specs]
+    end
+
+    subgraph Sync["Synchronization"]
+        Webhooks[Webhook System]
+        Events[Event Bus]
+        API[API Gateway]
+    end
+
+    Design --> Sync
+    PM --> Sync
+    Doc --> Sync
+    Sync --> Core[Core System]
+
+    Figma --> DS
+    DS --> Components
+    Linear --> Tasks
+    Tasks --> Sprints
+    Notion --> Wiki
+    Wiki --> Specs
+
+    style Design fill:#1A1A2E,stroke:#CD7F32,color:#FFFFFF
+    style PM fill:#33334C,stroke:#CD7F32,color:#FFFFFF
+    style Doc fill:#1A1A2E,stroke:#CD7F32,color:#FFFFFF
+    style Sync fill:#E6E6E6,stroke:#1A1A2E,color:#1A1A2E

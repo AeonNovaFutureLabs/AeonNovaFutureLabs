@@ -1,0 +1,75 @@
+monitoring:
+  metrics:
+    collection:
+      # System metrics that don't expose user data
+      system:
+        - name: cpu_usage
+          interval: 30s
+          retention: 7d
+        - name: memory_utilization
+          interval: 30s
+          retention: 7d
+        - name: network_latency
+          interval: 1m
+          retention: 7d
+          
+      # Anonymized application metrics
+      application:
+        - name: model_inference_time
+          aggregation: average
+          privacy_level: high
+        - name: vector_store_operations
+          anonymization: true
+          aggregation: count
+        - name: data_reclamation_requests
+          privacy_level: high
+          aggregation: count
+          
+  alerts:
+    privacy_violations:
+      - condition: "unauthorized_access_attempts > 5"
+        window: 5m
+        severity: critical
+        action: notify_security_team
+        
+    performance:
+      - condition: "model_inference_time > 500ms"
+        window: 5m
+        severity: warning
+        
+  logging:
+    privacy_rules:
+      - field: user_id
+        action: hash
+      - field: ip_address
+        action: mask
+      - field: email
+        action: remove
+        
+    retention:
+      hot_storage: 7d
+      cold_storage: 30d
+      
+  audit:
+    enabled: true
+    events:
+      - data_access
+      - privacy_settings_change
+      - consent_update
+    retention: 90d
+    
+  dashboards:
+    - name: system_health
+      privacy_level: low
+      panels:
+        - resource_utilization
+        - error_rates
+        - latency_metrics
+        
+    - name: privacy_metrics
+      privacy_level: high
+      restricted_access: true
+      panels:
+        - consent_management
+        - data_deletion_requests
+        - privacy_violations

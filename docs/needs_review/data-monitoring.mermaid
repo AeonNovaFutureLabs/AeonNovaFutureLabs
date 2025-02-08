@@ -1,0 +1,53 @@
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#1A1A2E',
+    'primaryTextColor': '#FFFFFF',
+    'primaryBorderColor': '#33334C',
+    'lineColor': '#CD7F32',
+    'secondaryColor': '#E6E6E6',
+    'tertiaryColor': '#CD7F32'
+  }
+}}%%
+
+flowchart TD
+    subgraph Input["Data Input"]
+        Raw[Raw Data]
+        Doc[Documents]
+        Stream[Data Streams]
+    end
+
+    subgraph Processing["Data Processing"]
+        Vec[Vector Embeddings]
+        ETL[ETL Pipeline]
+        AI[AI Processing]
+    end
+
+    subgraph Storage["Data Storage"]
+        ADB[Astra DB]
+        Redis[Cache Layer]
+        VS[Vector Store]
+    end
+
+    subgraph Analytics["Analytics & Monitoring"]
+        Metrics[Metrics Collection]
+        Alert[Alert System]
+        Dashboard[Monitoring Dashboard]
+    end
+
+    Input --> Processing
+    Processing --> Storage
+    Storage --> Analytics
+
+    Raw --> ETL
+    Doc --> Vec
+    Stream --> AI
+    
+    ETL --> ADB
+    Vec --> VS
+    AI --> Redis
+
+    style Input fill:#1A1A2E,stroke:#CD7F32,color:#FFFFFF
+    style Processing fill:#33334C,stroke:#CD7F32,color:#FFFFFF
+    style Storage fill:#1A1A2E,stroke:#CD7F32,color:#FFFFFF
+    style Analytics fill:#E6E6E6,stroke:#1A1A2E,color:#1A1A2E

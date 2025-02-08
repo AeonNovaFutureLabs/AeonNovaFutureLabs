@@ -1,0 +1,79 @@
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#1A1A2E',
+    'primaryTextColor': '#FFFFFF',
+    'primaryBorderColor': '#33334C',
+    'lineColor': '#CD7F32',
+    'secondaryColor': '#E6E6E6',
+    'tertiaryColor': '#CD7F32'
+  }
+}}%%
+
+flowchart TD
+    title[Aeon Nova Data Flow]
+    style title fill:#CD7F32,stroke:#FFFFFF,stroke-width:4px,color:#FFFFFF
+    subgraph Input["Data Input"]
+        Raw[Raw Data]
+        Doc[Documents]
+        Stream[Data Streams]
+        User([User Input])
+    end
+
+    subgraph Processing["Data Processing"]
+        Vec[Vector Embeddings]
+        ETL[ETL Pipeline]
+        AI[AI Processing]
+        RAG[RAG System]
+        FedLearn[Federated Learning]
+        MetaLearn[Meta Learning]
+    end
+
+    subgraph Storage["Data Storage"]
+        ADB[Astra DB]
+        Redis[Cache Layer]
+        VS[Vector Store]
+        Queue[Message Queue]
+    end
+
+    subgraph Analytics["Analytics & Monitoring"]
+        Metrics[Metrics Collection]
+        Alert[Alert System]
+        Dashboard[Monitoring Dashboard]
+    end
+
+    subgraph Output["Data Output"]
+        API[API Gateway]
+        Client[Client Applications]
+    end
+    Input --> Processing
+    Processing --> Storage
+    Storage --> Analytics
+    Storage --> Output
+    Processing --> Output
+
+    Raw --> ETL
+    Doc --> Vec
+    Stream --> AI
+    User --> AI
+
+    ETL --> ADB
+    Vec --> VS
+    AI --> Redis
+    AI --> Queue
+    RAG --> AI
+    FedLearn --> AI
+    MetaLearn --> AI
+
+    ADB --> API
+    Redis --> API
+    VS --> API
+    API --> Client
+    style Input fill:#1A1A2E,stroke:#CD7F32,color:#FFFFFF
+    style Processing fill:#33334C,stroke:#CD7F32,color:#FFFFFF
+    style Storage fill:#1A1A2E,stroke:#CD7F32,color:#FFFFFF
+    style Analytics fill:#E6E6E6,stroke:#1A1A2E,color:#1A1A2E
+    style Output fill:#CD7F32,stroke:#FFFFFF,color:#1A1A2E
+
+    classDef component fill:#CD7F32,stroke:#FFFFFF,color:#FFFFFF;
+    class Raw,Doc,Stream,User,Vec,ETL,AI,RAG,FedLearn,MetaLearn,ADB,Redis,VS,Queue,Metrics,Alert,Dashboard,API,Client component;

@@ -1,0 +1,69 @@
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#1A1A2E',
+    'primaryTextColor': '#FFFFFF',
+    'primaryBorderColor': '#33334C',
+    'lineColor': '#CD7F32',
+    'secondaryColor': '#E6E6E6',
+    'tertiaryColor': '#CD7F32'
+  }
+}}%%
+
+graph TB
+    title[Aeon Nova System Architecture]
+    style title fill:#CD7F32,stroke:#FFFFFF,stroke-width:4px,color:#FFFFFF
+    subgraph Core["Core Systems"]
+        AI[AI Models]
+        DB[Astra DB]
+        Queue[Message Queue]
+        Cache[Redis Cache]
+        VecStore[Vector Store]
+    end
+
+    subgraph Services["Service Layer"]
+        API[API Gateway]
+        Auth[Authentication]
+        RAG[RAG System]
+        FedLearn[Federated Learning]
+        MetaLearn[Meta Learning]
+        Monitor[Monitoring & Logging]
+    end
+
+    subgraph Frontend["Client Layer"]
+        Web[Web Interface]
+        Mobile[Mobile Apps]
+        Desktop[Desktop Apps]
+        IDE[IDE Plugin]
+    end
+
+    subgraph DevOps["Infrastructure"]
+        K8s[Kubernetes]
+        Docker[Containers]
+        CI[CI/CD Pipeline]
+        Prometheus[Prometheus]
+        Grafana[Grafana]
+    end
+
+    Frontend --> API
+    API --> Auth
+    Auth --> Services
+    Services --> Core
+    Core --> DevOps
+
+    AI --> VecStore
+    AI --> DB
+    AI --> Cache
+    RAG --> VecStore
+    FedLearn --> AI
+    MetaLearn --> AI
+    Monitor --> Prometheus
+    Prometheus --> Grafana
+    K8s --> Docker
+    style Core fill:#1A1A2E,stroke:#CD7F32,color:#FFFFFF
+    style Services fill:#33334C,stroke:#CD7F32,color:#FFFFFF
+    style Frontend fill:#1A1A2E,stroke:#CD7F32,color:#FFFFFF
+    style DevOps fill:#E6E6E6,stroke:#1A1A2E,color:#1A1A2E
+
+    classDef component fill:#CD7F32,stroke:#FFFFFF,color:#FFFFFF;
+    class AI,DB,Queue,Cache,VecStore,API,Auth,RAG,FedLearn,MetaLearn,Monitor,Web,Mobile,Desktop,IDE,K8s,Docker,CI,Prometheus,Grafana component;

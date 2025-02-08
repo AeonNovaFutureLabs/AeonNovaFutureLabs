@@ -1,0 +1,50 @@
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#1A1A2E',
+    'primaryTextColor': '#FFFFFF',
+    'primaryBorderColor': '#33334C',
+    'lineColor': '#CD7F32',
+    'secondaryColor': '#E6E6E6',
+    'tertiaryColor': '#CD7F32'
+  }
+}}%%
+
+graph TB
+    subgraph VC["Version Control"]
+        GH[GitHub]
+        GL[GitLab]
+        Local[Local Repos]
+    end
+
+    subgraph CI["CI/CD Pipeline"]
+        Actions[GitHub Actions]
+        GLCI[GitLab CI]
+        Local_CI[Local Testing]
+    end
+
+    subgraph Storage["Asset Storage"]
+        Artifacts[Build Artifacts]
+        Models[ML Models]
+        Docs[Documentation]
+    end
+
+    subgraph Deploy["Deployment"]
+        Dev[Development]
+        Stage[Staging]
+        Prod[Production]
+    end
+
+    GH --> Actions
+    GL --> GLCI
+    Local --> Local_CI
+    
+    Actions --> Storage
+    GLCI --> Storage
+    
+    Storage --> Deploy
+
+    style VC fill:#1A1A2E,stroke:#CD7F32,color:#FFFFFF
+    style CI fill:#33334C,stroke:#CD7F32,color:#FFFFFF
+    style Storage fill:#1A1A2E,stroke:#CD7F32,color:#FFFFFF
+    style Deploy fill:#E6E6E6,stroke:#1A1A2E,color:#1A1A2E

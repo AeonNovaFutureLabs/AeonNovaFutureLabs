@@ -1,0 +1,46 @@
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#1A1A2E',
+    'primaryTextColor': '#FFFFFF',
+    'primaryBorderColor': '#33334C',
+    'lineColor': '#CD7F32',
+    'secondaryColor': '#E6E6E6',
+    'tertiaryColor': '#CD7F32'
+  }
+}}%%
+
+graph TB
+    subgraph Data["Data Processing"]
+        Raw[Raw Data]
+        ETL[ETL Pipeline]
+        Doc[Document Processing]
+    end
+
+    subgraph AI["AI Layer"]
+        Models[AI Models]
+        Fed[Federated Learning]
+        RAG[RAG Pipeline]
+    end
+
+    subgraph Storage["Multi-Region Storage"]
+        AstraDB[Astra DB]
+        CDN[CDN Layer]
+        Cache[Redis Cache]
+    end
+
+    subgraph Monitor["Resilience"]
+        Chaos[Chaos Engineering]
+        Failover[Auto Failover]
+        Metrics[Monitoring]
+    end
+
+    Data --> AI
+    AI --> Storage
+    Storage --> Monitor
+    Monitor --> Data
+
+    style Data fill:#1A1A2E,stroke:#CD7F32,color:#FFFFFF
+    style AI fill:#33334C,stroke:#CD7F32,color:#FFFFFF
+    style Storage fill:#1A1A2E,stroke:#CD7F32,color:#FFFFFF
+    style Monitor fill:#E6E6E6,stroke:#1A1A2E,color:#1A1A2E

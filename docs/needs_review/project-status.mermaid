@@ -1,0 +1,50 @@
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#1A1A2E',
+    'primaryTextColor': '#FFFFFF',
+    'primaryBorderColor': '#33334C',
+    'lineColor': '#CD7F32',
+    'secondaryColor': '#E6E6E6',
+    'tertiaryColor': '#CD7F32'
+  }
+}}%%
+
+graph TB
+    subgraph Current["Implemented Systems"]
+        Pinecone[Pinecone Vector Store]
+        VSCode[VSCode Environment]
+        React[React Development]
+        Docker[Docker/Kubernetes]
+        Python[Python Environment]
+    end
+
+    subgraph Pending["Pending Integration"]
+        Google[Google Workspace]
+        Linear[Linear]
+        Notion[Notion]
+        AstraDB[Astra DB]
+    end
+
+    subgraph DevTools["Development Tools"]
+        direction LR
+        Adobe[Adobe Creative Suite]
+        ChatGPT[ChatGPT]
+        GitHub[GitHub Desktop]
+        Discord[Discord]
+    end
+
+    subgraph IDE["IDE Extensions"]
+        VSExt[VS Code Extensions]
+        GitExt[Git Extensions]
+        ReactExt[React Developer Tools]
+    end
+
+    Current --> IDE
+    Pending --> Current
+    DevTools --> Current
+
+style Current fill:#1A1A2E,stroke:#CD7F32,color:#FFFFFF
+style Pending fill:#33334C,stroke:#CD7F32,color:#FFFFFF
+style DevTools fill:#1A1A2E,stroke:#CD7F32,color:#FFFFFF
+style IDE fill:#E6E6E6,stroke:#1A1A2E,color:#1A1A2E
