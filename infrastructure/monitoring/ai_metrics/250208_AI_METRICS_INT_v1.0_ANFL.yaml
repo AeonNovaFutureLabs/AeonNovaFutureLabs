@@ -1,0 +1,205 @@
+# ----------------------------------------------------------------------------
+# File: 250208_AI_METRICS_INT_v1.0_ANFL.yaml
+# Location: /Volumes/mattstack/VSCode/AeonNovaFutureLabs/infrastructure/monitoring/ai_metrics/
+#
+# Purpose: Prometheus monitoring configuration for AI components
+# Security Level: Confidential
+# Owner: Infrastructure Team
+# Version: 1.0
+# Last Modified: 2025-02-08
+# ----------------------------------------------------------------------------
+
+# Global settings
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Rule files
+rule_files:
+  - "ai_alerts.yml"
+
+# Scrape configurations
+scrape_configs:
+  # MoE System Metrics
+  - job_name: 'moe-metrics'
+    static_configs:
+      - targets: ['localhost:9090']
+    metrics_path: '/metrics/moe'
+    scrape_interval: 10s
+    metric_relabel_configs:
+      - source_labels: [expert]
+        target_label: expert_name
+      - source_labels: [specialization]
+        target_label: expert_type
+
+  # Swarm System Metrics
+  - job_name: 'swarm-metrics'
+    static_configs:
+      - targets: ['localhost:9090']
+    metrics_path: '/metrics/swarm'
+    scrape_interval: 10s
+    metric_relabel_configs:
+      - source_labels: [algorithm]
+        target_label: swarm_type
+      - source_labels: [iteration]
+        target_label: optimization_step
+
+# Metric definitions
+metrics:
+  # MoE Metrics
+  moe_expert_load:
+    type: gauge
+    help: "Current load on each expert"
+    labels:
+      - expert_name
+      - expert_type
+
+  moe_expert_success_rate:
+    type: gauge
+    help: "Success rate of each expert"
+    labels:
+      - expert_name
+      - expert_type
+
+  moe_routing_decisions:
+    type: counter
+    help: "Number of routing decisions made"
+    labels:
+      - expert_name
+      - decision_type
+
+  moe_processing_time:
+    type: histogram
+    help: "Processing time for expert operations"
+    buckets: [0.1, 0.5, 1.0, 2.0, 5.0]
+    labels:
+      - expert_name
+      - operation_type
+
+  moe_memory_usage:
+    type: gauge
+    help: "Memory usage by expert"
+    labels:
+      - expert_name
+      - memory_type
+
+  # Swarm Metrics
+  swarm_convergence_rate:
+    type: gauge
+    help: "Convergence rate of swarm optimization"
+    labels:
+      - algorithm
+      - iteration
+
+  swarm_fitness_value:
+    type: gauge
+    help: "Current best fitness value"
+    labels:
+      - algorithm
+      - optimization_type
+
+  swarm_diversity:
+    type: gauge
+    help: "Swarm diversity metric"
+    labels:
+      - algorithm
+      - measure_type
+
+  swarm_iteration_time:
+    type: histogram
+    help: "Time per optimization iteration"
+    buckets: [0.1, 0.5, 1.0, 2.0, 5.0]
+    labels:
+      - algorithm
+      - phase
+
+  swarm_resource_usage:
+    type: gauge
+    help: "Resource usage by swarm algorithm"
+    labels:
+      - algorithm
+      - resource_type
+
+  # Integration Metrics
+  integration_performance:
+    type: gauge
+    help: "Overall system performance metric"
+    labels:
+      - component
+      - metric_type
+
+  integration_latency:
+    type: histogram
+    help: "End-to-end processing latency"
+    buckets: [0.1, 0.5, 1.0, 2.0, 5.0]
+    labels:
+      - operation
+      - component
+
+  integration_errors:
+    type: counter
+    help: "Number of integration errors"
+    labels:
+      - component
+      - error_type
+
+# Recording rules
+groups:
+  - name: ai_components
+    rules:
+      # MoE Performance Rules
+      - record: moe:expert_load:avg_5m
+        expr: avg_over_time(moe_expert_load[5m])
+      
+      - record: moe:success_rate:avg_5m
+        expr: avg_over_time(moe_expert_success_rate[5m])
+      
+      - record: moe:processing_time:p95_5m
+        expr: histogram_quantile(0.95, rate(moe_processing_time_bucket[5m]))
+
+      # Swarm Performance Rules
+      - record: swarm:convergence:rate_5m
+        expr: rate(swarm_convergence_rate[5m])
+      
+      - record: swarm:fitness:improvement_5m
+        expr: increase(swarm_fitness_value[5m])
+      
+      - record: swarm:iteration_time:avg_5m
+        expr: avg_over_time(swarm_iteration_time[5m])
+
+      # Integration Performance Rules
+      - record: integration:performance:avg_5m
+        expr: avg_over_time(integration_performance[5m])
+      
+      - record: integration:latency:p95_5m
+        expr: histogram_quantile(0.95, rate(integration_latency_bucket[5m]))
+      
+      - record: integration:error_rate:5m
+        expr: rate(integration_errors[5m])
+
+# Alert thresholds
+alerting:
+  moe_expert_overload:
+    threshold: 0.9
+    duration: 5m
+    severity: warning
+
+  moe_success_rate_low:
+    threshold: 0.95
+    duration: 5m
+    severity: warning
+
+  swarm_convergence_stall:
+    threshold: 0.001
+    duration: 10m
+    severity: warning
+
+  integration_high_latency:
+    threshold: 2.0
+    duration: 5m
+    severity: warning
+
+  integration_error_spike:
+    threshold: 0.1
+    duration: 5m
+    severity: critical

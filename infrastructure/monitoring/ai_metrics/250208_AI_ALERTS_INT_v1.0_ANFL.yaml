@@ -1,0 +1,148 @@
+# ----------------------------------------------------------------------------
+# File: 250208_AI_ALERTS_INT_v1.0_ANFL.yaml
+# Location: /Volumes/mattstack/VSCode/AeonNovaFutureLabs/infrastructure/monitoring/ai_metrics/
+#
+# Purpose: Alert rules for AI component monitoring
+# Security Level: Confidential
+# Owner: Infrastructure Team
+# Version: 1.0
+# Last Modified: 2025-02-08
+# ----------------------------------------------------------------------------
+
+groups:
+  - name: AIComponentAlerts
+    rules:
+      # MoE System Alerts
+      - alert: MoEExpertOverload
+        expr: moe_expert_load > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          component: moe
+        annotations:
+          summary: "Expert system overload detected"
+          description: "Expert {{ $labels.expert_name }} is experiencing high load ({{ $value }})"
+
+      - alert: MoELowSuccessRate
+        expr: moe_expert_success_rate < 0.95
+        for: 5m
+        labels:
+          severity: warning
+          component: moe
+        annotations:
+          summary: "Expert success rate below threshold"
+          description: "Expert {{ $labels.expert_name }} success rate dropped to {{ $value }}"
+
+      - alert: MoEHighLatency
+        expr: histogram_quantile(0.95, rate(moe_processing_time_bucket[5m])) > 2.0
+        for: 5m
+        labels:
+          severity: warning
+          component: moe
+        annotations:
+          summary: "High expert processing latency"
+          description: "95th percentile latency for {{ $labels.expert_name }} is {{ $value }}s"
+
+      # Swarm System Alerts
+      - alert: SwarmConvergenceStall
+        expr: rate(swarm_convergence_rate[10m]) < 0.001
+        for: 10m
+        labels:
+          severity: warning
+          component: swarm
+        annotations:
+          summary: "Swarm optimization stalled"
+          description: "{{ $labels.algorithm }} convergence rate dropped to {{ $value }}"
+
+      - alert: SwarmHighResourceUsage
+        expr: swarm_resource_usage > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          component: swarm
+        annotations:
+          summary: "High resource usage in swarm system"
+          description: "{{ $labels.algorithm }} using {{ $value }} of {{ $labels.resource_type }}"
+
+      - alert: SwarmLowDiversity
+        expr: swarm_diversity < 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: swarm
+        annotations:
+          summary: "Low swarm diversity"
+          description: "{{ $labels.algorithm }} diversity dropped to {{ $value }}"
+
+      # Integration Alerts
+      - alert: IntegrationHighLatency
+        expr: histogram_quantile(0.95, rate(integration_latency_bucket[5m])) > 2.0
+        for: 5m
+        labels:
+          severity: warning
+          component: integration
+        annotations:
+          summary: "High integration latency"
+          description: "95th percentile latency for {{ $labels.operation }} is {{ $value }}s"
+
+      - alert: IntegrationErrorSpike
+        expr: rate(integration_errors[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          component: integration
+        annotations:
+          summary: "Spike in integration errors"
+          description: "Error rate increased to {{ $value }} errors/s"
+
+      - alert: IntegrationPerformanceDrop
+        expr: avg_over_time(integration_performance[5m]) < 0.8
+        for: 5m
+        labels:
+          severity: warning
+          component: integration
+        annotations:
+          summary: "Integration performance degradation"
+          description: "Overall performance dropped to {{ $value }}"
+
+      # System Health Alerts
+      - alert: AISystemMemoryPressure
+        expr: sum(moe_memory_usage) + sum(swarm_resource_usage{resource_type="memory"}) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High memory pressure in AI system"
+          description: "Combined memory usage at {{ $value }}"
+
+      - alert: AISystemErrorRate
+        expr: sum(rate(integration_errors[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "Critical error rate in AI system"
+          description: "System-wide error rate at {{ $value }} errors/s"
+
+      # Performance Alerts
+      - alert: ExpertRoutingImbalance
+        expr: stddev(rate(moe_routing_decisions[5m])) / avg(rate(moe_routing_decisions[5m])) > 0.3
+        for: 5m
+        labels:
+          severity: warning
+          component: performance
+        annotations:
+          summary: "Imbalanced expert routing detected"
+          description: "Routing distribution variance above threshold"
+
+      - alert: OptimizationStagnation
+        expr: absent(rate(swarm_fitness_value[15m]) > 0)
+        for: 15m
+        labels:
+          severity: warning
+          component: performance
+        annotations:
+          summary: "Optimization progress stagnated"
+          description: "No improvement in fitness value for 15 minutes"
