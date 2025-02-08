@@ -25,7 +25,7 @@ setopt ERR_RETURN PIPE_FAIL LOCAL_OPTIONS LOCAL_TRAPS WARN_CREATE_GLOBAL
 # -------------------------------
 
 # Define environment states
-typeset -gA ENV_STATES
+declare -gA ENV_STATES
 ENV_STATES=(
     [UNINITIALIZED]=0
     [PARTIALLY_INITIALIZED]=1
@@ -41,7 +41,7 @@ ENV_STATES=(
 # -------------------------------
 
 # Define required environment variables
-typeset -ga REQUIRED_ENV_VARS
+declare -ga REQUIRED_ENV_VARS
 REQUIRED_ENV_VARS=(
     "ANFL_ROOT"
     "ANFL_CUSTOM_ZSH"
@@ -51,7 +51,7 @@ REQUIRED_ENV_VARS=(
 )
 
 # Define required directories
-typeset -ga REQUIRED_DIRS
+declare -ga REQUIRED_DIRS
 REQUIRED_DIRS=(
     "${ANFL_ROOT}"
     "${ANFL_CUSTOM_ZSH}"
@@ -67,7 +67,7 @@ REQUIRED_DIRS=(
 # -------------------------------
 
 # Validate environment variables
-function validate_env_vars() {
+validate_env_vars() {
     local missing_vars=()
     
     for var in "${REQUIRED_ENV_VARS[@]}"; do
@@ -85,7 +85,7 @@ function validate_env_vars() {
 }
 
 # Validate directory structure
-function validate_directories() {
+validate_directories() {
     local missing_dirs=()
     
     for dir in "${REQUIRED_DIRS[@]}"; do
@@ -97,13 +97,13 @@ function validate_directories() {
     if (( ${#missing_dirs} > 0 )); then
         log_error "Missing required directories: ${(j:, :)missing_dirs}"
         return "${ERROR_CODES[CONFIG_ERROR]}"
-    }
+    fi
     
     return "${ERROR_CODES[SUCCESS]}"
 }
 
 # Validate permissions
-function validate_permissions() {
+validate_permissions() {
     local invalid_perms=()
     
     # Check log directory permissions
@@ -119,7 +119,7 @@ function validate_permissions() {
     if (( ${#invalid_perms} > 0 )); then
         log_error "Invalid permissions: ${(j:, :)invalid_perms}"
         return "${ERROR_CODES[CONFIG_ERROR]}"
-    }
+    fi
     
     return "${ERROR_CODES[SUCCESS]}"
 }
@@ -129,7 +129,7 @@ function validate_permissions() {
 # -------------------------------
 
 # Create required directories
-function create_directories() {
+create_directories() {
     local created=0
     
     for dir in "${REQUIRED_DIRS[@]}"; do
@@ -151,7 +151,7 @@ function create_directories() {
 }
 
 # Set environment defaults
-function set_env_defaults() {
+set_env_defaults() {
     # Set default environment if not set
     : ${ANFL_ENV:="development"}
     
@@ -179,7 +179,7 @@ function set_env_defaults() {
 # -------------------------------
 
 # Initialize environment
-function init_env() {
+init_env() {
     log_info "Initializing environment..."
     
     # Create required directories
@@ -198,7 +198,7 @@ function init_env() {
 }
 
 # Validate complete environment
-function validate_environment() {
+validate_environment() {
     log_info "Validating environment..."
     
     # Validate environment variables
@@ -219,12 +219,12 @@ function validate_environment() {
 # -------------------------------
 
 # Export environment states
-typeset -gx ENV_STATES ENV_STATE
+export ENV_STATES ENV_STATE
 
 # Export core functions
-typeset -fx init_env validate_environment
-typeset -fx validate_env_vars validate_directories validate_permissions
-typeset -fx create_directories set_env_defaults
+export -f init_env validate_environment
+export -f validate_env_vars validate_directories validate_permissions
+export -f create_directories set_env_defaults
 
 # Initialize environment when sourced
 init_env

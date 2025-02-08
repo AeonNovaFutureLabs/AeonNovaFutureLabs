@@ -24,7 +24,7 @@ setopt ERR_RETURN PIPE_FAIL LOCAL_OPTIONS LOCAL_TRAPS WARN_CREATE_GLOBAL
 # -------------------------------
 
 # Define error states with proper scoping
-typeset -gA ERROR_STATES
+declare -gA ERROR_STATES
 ERROR_STATES=(
     [NONE]=0
     [WARNING]=1
@@ -36,7 +36,7 @@ ERROR_STATES=(
 : ${ERROR_STATE:=$ERROR_STATES[NONE]}
 
 # Define error codes with proper scoping
-typeset -gA ERROR_CODES
+declare -gA ERROR_CODES
 ERROR_CODES=(
     [SUCCESS]=0
     [GENERAL_ERROR]=1
@@ -75,7 +75,7 @@ fi
 # -------------------------------
 
 # Generic error handler for trap
-function handle_error_generic() {
+handle_error_generic() {
     local exit_code=$?
     local line_no=$1
     local func_name=${funcstack[1]:-UNKNOWN}
@@ -93,7 +93,7 @@ function handle_error_generic() {
 }
 
 # Enhanced error handler with severity levels
-function handle_error() {
+handle_error() {
     local exit_code=$1
     local function_name=$2
     local message=$3
@@ -115,7 +115,7 @@ function handle_error() {
 }
 
 # Track error with proper logging
-function track_error() {
+track_error() {
     local exit_code=$1
     local function_name=$2
     local message=$3
@@ -145,17 +145,17 @@ function track_error() {
 # -------------------------------
 
 # Check current error state
-function check_error_state() {
+check_error_state() {
     (( ERROR_STATE > ERROR_STATES[NONE] ))
 }
 
 # Reset error state
-function reset_error_state() {
+reset_error_state() {
     ERROR_STATE=$ERROR_STATES[NONE]
 }
 
 # Print formatted error message
-function print_error() {
+print_error() {
     local message=$1
     local severity=${2:-ERROR}
     local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
@@ -163,7 +163,7 @@ function print_error() {
 }
 
 # Print formatted warning message
-function print_warning() {
+print_warning() {
     local message=$1
     local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     print -P "%F{yellow}⚠️  [${timestamp}] [WARNING] ${message}%f" >&2
@@ -174,7 +174,7 @@ function print_warning() {
 # -------------------------------
 
 # Initialize error handler
-function init_error_handler() {
+init_error_handler() {
     # Set error trap
     trap 'handle_error_generic $LINENO' ERR
 
@@ -196,12 +196,12 @@ function init_error_handler() {
 # -------------------------------
 
 # Export error states and codes
-typeset -gx ERROR_STATES ERROR_STATE ERROR_CODES ERROR_LOG
+export ERROR_STATES ERROR_STATE ERROR_CODES ERROR_LOG
 
 # Export error functions
-typeset -fx handle_error_generic handle_error track_error
-typeset -fx check_error_state reset_error_state
-typeset -fx print_error print_warning init_error_handler
+export -f handle_error_generic handle_error track_error
+export -f check_error_state reset_error_state
+export -f print_error print_warning init_error_handler
 
 # Initialize handler when sourced
 init_error_handler

@@ -24,7 +24,7 @@ setopt ERR_RETURN PIPE_FAIL LOCAL_OPTIONS LOCAL_TRAPS WARN_CREATE_GLOBAL
 # -------------------------------
 
 # Define log levels with proper scoping
-typeset -gA LOG_LEVELS
+declare -gA LOG_LEVELS
 LOG_LEVELS=(
     [DEBUG]=0
     [INFO]=1
@@ -34,7 +34,7 @@ LOG_LEVELS=(
 )
 
 # Define log colors
-typeset -gA LOG_COLORS
+declare -gA LOG_COLORS
 LOG_COLORS=(
     [DEBUG]="%F{cyan}"
     [INFO]="%F{green}"
@@ -56,7 +56,7 @@ LOG_COLORS=(
 # -------------------------------
 
 # Initialize logging system
-function init_logging() {
+init_logging() {
     # Create log directory if it doesn't exist
     if [[ ! -d "${ANFL_LOGS}" ]]; then
         mkdir -p "${ANFL_LOGS}" || {
@@ -79,7 +79,7 @@ function init_logging() {
 }
 
 # Core logging function
-function _log() {
+_log() {
     local level=$1
     local message=$2
     local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
@@ -114,27 +114,27 @@ function _log() {
 # -------------------------------
 
 # Debug level logging
-function log_debug() {
+log_debug() {
     _log "DEBUG" "$1"
 }
 
 # Info level logging
-function log_info() {
+log_info() {
     _log "INFO" "$1"
 }
 
 # Warning level logging
-function log_warning() {
+log_warning() {
     _log "WARNING" "$1"
 }
 
 # Error level logging
-function log_error() {
+log_error() {
     _log "ERROR" "$1"
 }
 
 # Critical level logging
-function log_critical() {
+log_critical() {
     _log "CRITICAL" "$1"
 }
 
@@ -143,7 +143,7 @@ function log_critical() {
 # -------------------------------
 
 # Rotate log files
-function rotate_logs() {
+rotate_logs() {
     local base_log=$1
     : ${base_log:=$MAIN_LOG}
 
@@ -169,7 +169,7 @@ function rotate_logs() {
 }
 
 # Clear logs
-function clear_logs() {
+clear_logs() {
     local keep_days=${1:-30}
     local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
 
@@ -182,7 +182,7 @@ function clear_logs() {
 # -------------------------------
 
 # Set log level
-function set_log_level() {
+set_log_level() {
     local level=$1
     if [[ -n "${LOG_LEVELS[$level]}" ]]; then
         LOG_LEVEL=$LOG_LEVELS[$level]
@@ -195,7 +195,7 @@ function set_log_level() {
 }
 
 # Get current log level
-function get_log_level() {
+get_log_level() {
     for level in ${(k)LOG_LEVELS}; do
         if [[ $LOG_LEVELS[$level] == $LOG_LEVEL ]]; then
             echo $level
@@ -210,13 +210,13 @@ function get_log_level() {
 # -------------------------------
 
 # Export configuration
-typeset -gx LOG_LEVELS LOG_LEVEL LOG_COLORS MAIN_LOG
+export LOG_LEVELS LOG_LEVEL LOG_COLORS MAIN_LOG
 
 # Export functions
-typeset -fx init_logging _log
-typeset -fx log_debug log_info log_warning log_error log_critical
-typeset -fx rotate_logs clear_logs
-typeset -fx set_log_level get_log_level
+export -f init_logging _log
+export -f log_debug log_info log_warning log_error log_critical
+export -f rotate_logs clear_logs
+export -f set_log_level get_log_level
 
 # Initialize logging when sourced
 init_logging
