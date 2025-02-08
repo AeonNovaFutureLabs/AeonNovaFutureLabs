@@ -216,12 +216,21 @@ generate_random_string() {
 # -------------------------------
 
 # Export utility functions
-export -f clean_path verify_path
-export -f get_file_size get_file_mtime create_directory
-export -f trim contains
-export -f join_by array_contains
-export -f command_exists get_memory_info get_load_avg
-export -f create_venv run_tests
-export -f get_timestamp generate_random_string
+functions[clean_path]=$functions[clean_path]
+functions[verify_path]=$functions[verify_path]
+functions[get_file_size]=$functions[get_file_size]
+functions[get_file_mtime]=$functions[get_file_mtime]
+functions[create_directory]=$functions[create_directory]
+functions[trim]=$functions[trim]
+functions[contains]=$functions[contains]
+functions[join_by]=$functions[join_by]
+functions[array_contains]=$functions[array_contains]
+functions[command_exists]=$functions[command_exists]
+functions[get_memory_info]=$functions[get_memory_info]
+functions[get_load_avg]=$functions[get_load_avg]
+functions[create_venv]=$functions[create_venv]
+functions[run_tests]=$functions[run_tests]
+functions[get_timestamp]=$functions[get_timestamp]
+functions[generate_random_string]=$functions[generate_random_string]
 
 # ----------------------------------------------------------------------------
