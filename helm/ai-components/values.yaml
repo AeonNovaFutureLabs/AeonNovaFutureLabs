@@ -1,0 +1,153 @@
+# ----------------------------------------------------------------------------
+# File: values.yaml
+# Location: /Volumes/mattstack/VSCode/AeonNovaFutureLabs/helm/ai-components/
+#
+# Purpose: Default values for AI components Helm chart
+# Security Level: Confidential
+# Owner: Infrastructure Team
+# Version: 1.0
+# Last Modified: 2025-02-08
+# ----------------------------------------------------------------------------
+
+# Global settings
+global:
+  environment: development
+  imageRegistry: ghcr.io/aeonnovafuturelabs
+
+# AI Components configuration
+aiComponents:
+  image:
+    repository: ai
+    tag: latest
+    pullPolicy: Always
+  
+  replicas: 3
+  
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: standard
+  
+  # Component-specific settings
+  chatScraper:
+    enabled: true
+    maxConcurrentSessions: 5
+    timeoutSeconds: 30
+    retryAttempts: 3
+  
+  vectorStore:
+    enabled: true
+    dimension: 1536
+    metric: cosine
+    caching:
+      enabled: true
+      hotCacheSize: 1000
+      warmCacheSize: 5000
+
+# Security settings
+security:
+  networkPolicy:
+    enabled: true
+    ingressRules:
+      - from:
+          - namespaceSelector:
+              matchLabels:
+                name: ingress-nginx
+          - podSelector:
+              matchLabels:
+                app: api-gateway
+    egressRules:
+      - to:
+          - podSelector:
+              matchLabels:
+                app: vector-store
+          - namespaceSelector:
+              matchLabels:
+                name: monitoring
+
+# Monitoring configuration
+monitoring:
+  enabled: true
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      interval: 15s
+  grafana:
+    enabled: true
+    dashboards:
+      enabled: true
+      label: anfl-grafana-dashboard
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 80
+  metricsPort: 9090
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts: []
+  tls: []
+
+# Environment variables
+env:
+  LOG_LEVEL: INFO
+  NODE_ENV: production
+
+# Secret references
+secrets:
+  enabled: true
+  OPENWEATHER_API_KEY: ""
+  SNYK_TOKEN: ""
+
+# Autoscaling configuration
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+# Pod disruption budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+# Pod security context
+podSecurityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+# Container security context
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  capabilities:
+    drop:
+      - ALL
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# Annotations
+annotations: {}

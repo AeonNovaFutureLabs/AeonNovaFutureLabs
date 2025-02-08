@@ -1,0 +1,53 @@
+# ----------------------------------------------------------------------------
+# File: values-staging.yaml
+# Location: /Volumes/mattstack/VSCode/AeonNovaFutureLabs/helm/ai-components/
+#
+# Purpose: Staging environment values for AI components
+# Security Level: Confidential
+# Owner: Infrastructure Team
+# Version: 1.0
+# Last Modified: 2025-02-08
+# ----------------------------------------------------------------------------
+
+global:
+  environment: staging
+  imageRegistry: ghcr.io/aeonnovafuturelabs
+
+aiComponents:
+  replicas: 2
+  resources:
+    requests:
+      cpu: 200m
+      memory: 384Mi
+    limits:
+      cpu: 400m
+      memory: 768Mi
+
+  persistence:
+    size: 5Gi
+
+chatScraper:
+  maxConcurrentSessions: 3
+  timeoutSeconds: 45
+  retryAttempts: 2
+
+vectorStore:
+  caching:
+    hotCacheSize: 500
+    warmCacheSize: 2500
+
+monitoring:
+  prometheus:
+    serviceMonitor:
+      interval: 30s
+
+autoscaling:
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+env:
+  LOG_LEVEL: DEBUG
+
+podDisruptionBudget:
+  minAvailable: 1

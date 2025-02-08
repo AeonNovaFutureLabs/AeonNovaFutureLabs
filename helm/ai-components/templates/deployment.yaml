@@ -1,0 +1,141 @@
+# ----------------------------------------------------------------------------
+# File: deployment.yaml
+# Location: /Volumes/mattstack/VSCode/AeonNovaFutureLabs/helm/ai-components/templates/
+#
+# Purpose: Deployment template for AI components
+# Security Level: Confidential
+# Owner: Infrastructure Team
+# Version: 1.0
+# Last Modified: 2025-02-08
+# ----------------------------------------------------------------------------
+
+{{- if .Values.aiComponents.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ai-components.fullname" . }}
+  labels:
+    {{- include "ai-components.labels" . | nindent 4 }}
+  {{- with .Values.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.aiComponents.replicas }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "ai-components.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "ai-components.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if .Values.monitoring.prometheus.serviceMonitor.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.service.metricsPort }}"
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "ai-components.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.aiComponents.image.repository }}:{{ .Values.aiComponents.image.tag }}"
+          imagePullPolicy: {{ .Values.aiComponents.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+            - name: metrics
+              containerPort: {{ .Values.service.metricsPort }}
+              protocol: TCP
+          env:
+            - name: NODE_ENV
+              value: {{ .Values.env.NODE_ENV }}
+            - name: LOG_LEVEL
+              value: {{ .Values.env.LOG_LEVEL }}
+            {{- if .Values.chatScraper.enabled }}
+            - name: MAX_CONCURRENT_SESSIONS
+              value: "{{ .Values.chatScraper.maxConcurrentSessions }}"
+            - name: TIMEOUT_SECONDS
+              value: "{{ .Values.chatScraper.timeoutSeconds }}"
+            - name: RETRY_ATTEMPTS
+              value: "{{ .Values.chatScraper.retryAttempts }}"
+            {{- end }}
+            {{- if .Values.vectorStore.enabled }}
+            - name: VECTOR_DIMENSION
+              value: "{{ .Values.vectorStore.dimension }}"
+            - name: VECTOR_METRIC
+              value: {{ .Values.vectorStore.metric }}
+            - name: CACHE_ENABLED
+              value: "{{ .Values.vectorStore.caching.enabled }}"
+            - name: HOT_CACHE_SIZE
+              value: "{{ .Values.vectorStore.caching.hotCacheSize }}"
+            - name: WARM_CACHE_SIZE
+              value: "{{ .Values.vectorStore.caching.warmCacheSize }}"
+            {{- end }}
+            {{- range $key, $value := .Values.secrets }}
+            {{- if $value }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ai-components.fullname" $ }}-secrets
+                  key: {{ $key }}
+            {{- end }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          resources:
+            {{- toYaml .Values.aiComponents.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+            {{- if .Values.configMap.enabled }}
+            - name: config
+              mountPath: /app/config
+            {{- end }}
+      volumes:
+        - name: data
+          {{- if .Values.aiComponents.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "ai-components.fullname" . }}-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- if .Values.configMap.enabled }}
+        - name: config
+          configMap:
+            name: {{ include "ai-components.fullname" . }}-config
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

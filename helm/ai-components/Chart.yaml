@@ -1,0 +1,37 @@
+# ----------------------------------------------------------------------------
+# File: Chart.yaml
+# Location: /Volumes/mattstack/VSCode/AeonNovaFutureLabs/helm/ai-components/
+#
+# Purpose: Helm chart definition for AI components
+# Security Level: Confidential
+# Owner: Infrastructure Team
+# Version: 1.0
+# Last Modified: 2025-02-08
+# ----------------------------------------------------------------------------
+
+apiVersion: v2
+name: ai-components
+description: AI components including chat scraper and vector store integration
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+
+dependencies:
+  - name: prometheus
+    version: "15.x.x"
+    repository: https://prometheus-community.github.io/helm-charts
+    condition: prometheus.enabled
+  - name: grafana
+    version: "6.x.x"
+    repository: https://grafana.github.io/helm-charts
+    condition: grafana.enabled
+
+maintainers:
+  - name: ANFL Infrastructure Team
+    email: infrastructure@aeonnovafuturelabs.com
+
+keywords:
+  - ai
+  - scraper
+  - vector-store
+  - monitoring

@@ -1,0 +1,92 @@
+# ----------------------------------------------------------------------------
+# File: values-production.yaml
+# Location: /Volumes/mattstack/VSCode/AeonNovaFutureLabs/helm/ai-components/
+#
+# Purpose: Production environment values for AI components
+# Security Level: Confidential
+# Owner: Infrastructure Team
+# Version: 1.0
+# Last Modified: 2025-02-08
+# ----------------------------------------------------------------------------
+
+global:
+  environment: production
+  imageRegistry: ghcr.io/aeonnovafuturelabs
+
+aiComponents:
+  replicas: 5
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+
+  persistence:
+    size: 20Gi
+    storageClass: premium-rwo
+
+chatScraper:
+  maxConcurrentSessions: 10
+  timeoutSeconds: 30
+  retryAttempts: 3
+
+vectorStore:
+  caching:
+    hotCacheSize: 2000
+    warmCacheSize: 10000
+
+monitoring:
+  prometheus:
+    serviceMonitor:
+      interval: 15s
+
+security:
+  networkPolicy:
+    enabled: true
+    ingressRules:
+      - from:
+          - namespaceSelector:
+              matchLabels:
+                name: ingress-nginx
+          - podSelector:
+              matchLabels:
+                app: api-gateway
+
+autoscaling:
+  enabled: true
+  minReplicas: 5
+  maxReplicas: 15
+  targetCPUUtilizationPercentage: 75
+  targetMemoryUtilizationPercentage: 75
+
+env:
+  LOG_LEVEL: INFO
+  NODE_ENV: production
+
+podDisruptionBudget:
+  minAvailable: 3
+
+# Production-specific affinity rules
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+            - key: app.kubernetes.io/name
+              operator: In
+              values:
+                - ai-components
+        topologyKey: "kubernetes.io/hostname"
+
+# Production tolerations
+tolerations:
+  - key: "dedicated"
+    operator: "Equal"
+    value: "ai-components"
+    effect: "NoSchedule"
+
+# Node selector for production
+nodeSelector:
+  node-type: compute-optimized
